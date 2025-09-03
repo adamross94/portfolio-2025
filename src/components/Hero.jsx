@@ -1,10 +1,10 @@
 import React from 'react'
-import AnimatedEnglandFlag from './AnimatedEnglandFlag'
+import AnimatedWyvernFlag from './AnimatedWyvernFlag'
 import { FaLinkedin, FaGithub, FaFilePdf, FaEnvelope } from 'react-icons/fa'
 
 const Hero = () => (
   <section className="relative h-[60vh] w-full overflow-hidden">
-    <AnimatedEnglandFlag />
+    <AnimatedWyvernFlag />
     <div className="absolute inset-0 bg-white/70 dark:bg-black/70" />
 
     {/* Centered content */}
