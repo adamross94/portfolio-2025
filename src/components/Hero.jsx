@@ -1,16 +1,10 @@
 import React from 'react'
-import FractalBackground from './FractalBackground'
+import AnimatedEnglandFlag from './AnimatedEnglandFlag'
 import { FaLinkedin, FaGithub, FaFilePdf, FaEnvelope } from 'react-icons/fa'
 
 const Hero = () => (
   <section className="relative h-[60vh] w-full overflow-hidden">
-    <FractalBackground />
-    {/* Full-screen background */}
-    <div
-      className="absolute inset-0 bg-cover bg-center"
-      style={{ backgroundImage: 'url(/edge-detect.jpg)' }}
-    />
-    {/* Dark overlay */}
+    <AnimatedEnglandFlag />
     <div className="absolute inset-0 bg-white/70 dark:bg-black/70" />
 
     {/* Centered content */}
