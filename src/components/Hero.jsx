@@ -1,6 +1,6 @@
 import React from 'react'
 import FractalBackground from './FractalBackground'
-import { FaLinkedin, FaGithub } from 'react-icons/fa'
+import { FaLinkedin, FaGithub, FaFilePdf, FaEnvelope } from 'react-icons/fa'
 
 const Hero = () => (
   <section className="relative h-[60vh] w-full overflow-hidden">
@@ -21,17 +21,19 @@ const Hero = () => (
       <p className="mb-8 text-lg md:text-2xl text-gray-700 dark:text-gray-300">
         Data specialist who loves building with Python and TypeScript
       </p>
-      <div className="mb-10 flex space-x-5">
-        <a
-          href="/resume.pdf"
-          className="px-6 py-3 bg-black text-white rounded-md shadow hover:bg-gray-800 transition dark:bg-white dark:text-black dark:hover:bg-gray-100"
-        >
-          Resume
-        </a>
-        <button className="px-6 py-3 bg-transparent border border-black text-black rounded-md hover:bg-black/10 transition dark:border-white dark:text-white dark:hover:bg-white/10">
-          Get in Touch
-        </button>
-      </div>
+     <div className="mb-10 flex space-x-5">
+  <a
+    href="/resume.pdf"
+    className="px-6 py-3 bg-black text-white rounded-md shadow hover:bg-gray-800 transition dark:bg-white dark:text-black dark:hover:bg-gray-100 flex items-center"
+  >
+    <FaFilePdf className="mr-2" />
+    Resume
+  </a>
+  <button className="px-6 py-3 bg-transparent border border-black text-black rounded-md hover:bg-black/10 transition dark:border-white dark:text-white dark:hover:bg-white/10 flex items-center">
+    <FaEnvelope className="mr-2" />
+    Get in Touch
+  </button>
+</div>
       <div className="flex space-x-6 text-black dark:text-white text-2xl">
          <a
           href="https://www.linkedin.com/in/adam-ross-34b79478/"
