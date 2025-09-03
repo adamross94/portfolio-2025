@@ -1,5 +1,6 @@
 // src/components/Navbar.jsx
 import React, { useState, useEffect } from 'react'
+import { FaMoon, FaSun } from 'react-icons/fa'
 
 const projects = [
   { name: 'coderview',       href: '/projects/coderview' },
@@ -11,17 +12,28 @@ const projects = [
 
 export default function Navbar() {
   const [currentPath, setCurrentPath] = useState('')
+  const [theme, setTheme] = useState(
+    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  )
+
   useEffect(() => {
     setCurrentPath(window.location.pathname)
   }, [])
 
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(newTheme)
+    document.documentElement.classList.toggle('dark')
+    localStorage.setItem('theme', newTheme)
+  }
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 bg-black backdrop-blur-lg border-b border-white/20">
+    <header className="fixed inset-x-0 top-0 z-50 bg-white dark:bg-black backdrop-blur-lg border-b border-black/10 dark:border-white/20">
       <div className="container mx-auto flex h-20 items-center px-6">
         {/* WR square logo */}
         <a
           href="/"
-          className="flex h-10 w-10 items-center justify-center bg-white/10 text-white font-bold rounded-sm"
+          className="flex h-10 w-10 items-center justify-center bg-black/10 text-black font-bold rounded-sm dark:bg-white/10 dark:text-white"
         >
           AR
         </a>
@@ -37,8 +49,8 @@ export default function Navbar() {
                 className={
                   `px-3 py-1 rounded-md transition-colors ` +
                   (isActive
-                    ? 'bg-white/20 text-white'
-                    : 'text-white/80 hover:text-white hover:bg-white/10')
+                    ? 'bg-black/20 text-black dark:bg-white/20 dark:text-white'
+                    : 'text-black/80 hover:text-black hover:bg-black/10 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10')
                 }
               >
                 {name}
@@ -47,9 +59,13 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* CTA button */}
-        <button className="ml-auto px-4 py-2 bg-white text-black rounded-md shadow-sm hover:shadow transition-shadow">
-          Get in Touch
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="ml-auto p-2 rounded-md bg-black text-white dark:bg-white dark:text-black shadow-sm hover:shadow transition-shadow"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <FaSun /> : <FaMoon />}
         </button>
       </div>
     </header>
