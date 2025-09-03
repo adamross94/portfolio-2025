@@ -1,5 +1,11 @@
 # React + Vite
 
+## Features
+
+- Light/Dark theme toggle in the navigation bar
+- Resume and Get in Touch buttons with icons in the hero section
+
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
