@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import anime from 'animejs'
+import anime from 'animejs/lib/anime.es.js'
 
 export default function AnimatedEnglandFlag() {
   const ref = useRef(null)
