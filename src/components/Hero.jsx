@@ -11,28 +11,28 @@ const Hero = () => (
       style={{ backgroundImage: 'url(/edge-detect.jpg)' }}
     />
     {/* Dark overlay */}
-    <div className="absolute inset-0 bg-black/70" />
+    <div className="absolute inset-0 bg-white/70 dark:bg-black/70" />
 
     {/* Centered content */}
     <div className="relative z-10 mx-auto flex h-full max-w-3xl flex-col items-center justify-center px-6 text-center">
-      <h1 className="mb-4 mt-16 text-6xl md:text-8xl font-bold text-white drop-shadow-lg">
+      <h1 className="mb-4 mt-16 text-6xl md:text-8xl font-bold text-black dark:text-white drop-shadow-lg">
         Adam Ross
       </h1>
-      <p className="mb-8 text-lg md:text-2xl text-gray-300">
+      <p className="mb-8 text-lg md:text-2xl text-gray-700 dark:text-gray-300">
         Data specialist who loves building with Python and TypeScript
       </p>
       <div className="mb-10 flex space-x-5">
         <a
           href="/resume.pdf"
-          className="px-6 py-3 bg-white text-black rounded-md shadow hover:bg-gray-100 transition"
+          className="px-6 py-3 bg-black text-white rounded-md shadow hover:bg-gray-800 transition dark:bg-white dark:text-black dark:hover:bg-gray-100"
         >
           Resume
         </a>
-        <button className="px-6 py-3 bg-transparent border border-white text-white rounded-md hover:bg-white/10 transition">
+        <button className="px-6 py-3 bg-transparent border border-black text-black rounded-md hover:bg-black/10 transition dark:border-white dark:text-white dark:hover:bg-white/10">
           Get in Touch
         </button>
       </div>
-      <div className="flex space-x-6 text-white text-2xl">
+      <div className="flex space-x-6 text-black dark:text-white text-2xl">
          <a
           href="https://www.linkedin.com/in/adam-ross-34b79478/"
           target="_blank"
