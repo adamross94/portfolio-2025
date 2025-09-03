@@ -5,7 +5,7 @@ import { projects } from '../data/projects'
 
 export default function Projects() {
   return (
-    <section id="projects" className="py-20 bg-black text-white">
+    <section id="projects" className="py-20 bg-white text-black dark:bg-black dark:text-white">
       <div className="max-w-7xl mx-auto px-4">
         <h2 className="text-4xl font-bold mb-12 text-center">Featured Projects</h2>
 
@@ -20,7 +20,7 @@ export default function Projects() {
                 className={`flex ${containerOrder} items-center px-4 py-12 gap-12`}
               >
                 {/* MEDIA SIDE */}
-                <div className="flex-1 h-64 lg:h-80 overflow-hidden rounded-lg shadow-lg bg-gray-900">
+                <div className="flex-1 h-64 lg:h-80 overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900">
                   {project.mediaType === 'video' ? (
                     <video
                       src={project.mediaUrl}
@@ -42,10 +42,10 @@ export default function Projects() {
                 {/* TEXT SIDE */}
                 <div className="flex-1 space-y-4">
                   <h3 className="text-3xl py-2 font-bold">{project.title}</h3>
-                  <p className="text-lg py-2 text-gray-300">{project.shortDesc}</p>
+                  <p className="text-lg py-2 text-gray-700 dark:text-gray-300">{project.shortDesc}</p>
                   <Link
                     to={`/projects/${project.slug}`}
-                    className="inline-flex items-center text-white font-medium hover:underline"
+                    className="inline-flex items-center text-black font-medium hover:underline dark:text-white"
                   >
                     View Project →
                   </Link>
