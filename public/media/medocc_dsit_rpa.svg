@@ -1,0 +1,97 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071422"/>
+      <stop offset="1" stop-color="#0B1F36"/>
+    </linearGradient>
+    <style>
+      .box{fill:#0D2746; stroke:#9AD1FF; stroke-width:2; rx:18}
+      .label{font:600 26px system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial; fill:#F4FAFF}
+      .sub{font:500 18px system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial; fill:#C7E6FF}
+      .arrow{stroke:#C7E6FF; stroke-width:3; marker-end:url(#arrowHead)}
+      .code{fill:#0B1730; stroke:#5EA8FF; stroke-width:1.5; rx:16}
+      .mono{font:500 18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#CFE7FF}
+      .kw{fill:#A6E1FA}
+      .fn{fill:#79D2A5}
+      .sym{fill:#FFD78A}
+    </style>
+    <marker id="arrowHead" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#C7E6FF"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="800" fill="url(#bg)"/>
+
+  <!-- LEFT: Vertical pipeline (centered text) -->
+  <g transform="translate(60,80)">
+    <!-- Box dims -->
+    <!-- b1: y=0 h=96  | b2: y=140 h=96 | b3: y=280 h=120 | b4: y=444 h=120 | b5: y=608 h=96 -->
+    <!-- total stack height = 704 -->
+
+    <!-- 1 -->
+    <rect x="0" y="0" width="560" height="96" class="box"/>
+    <g transform="translate(280,48)">
+      <text class="label" text-anchor="middle" dominant-baseline="middle">Outlook (MedOCC)</text>
+      <text class="sub" text-anchor="middle" dominant-baseline="middle" y="26">attachments → /staging/inbox</text>
+    </g>
+
+    <line x1="280" y1="96" x2="280" y2="136" class="arrow"/>
+
+    <!-- 2 -->
+    <rect x="0" y="140" width="560" height="96" class="box"/>
+    <g transform="translate(280,188)">
+      <text class="label" text-anchor="middle" dominant-baseline="middle">Python RPA (scheduled)</text>
+      <text class="sub" text-anchor="middle" dominant-baseline="middle" y="26">whitelist · idempotency</text>
+    </g>
+
+    <line x1="280" y1="236" x2="280" y2="276" class="arrow"/>
+
+    <!-- 3 -->
+    <rect x="0" y="280" width="560" height="120" class="box"/>
+    <g transform="translate(280,340)">
+      <text class="label" text-anchor="middle" dominant-baseline="middle">Harden &amp; normalise</text>
+      <text class="sub" text-anchor="middle" dominant-baseline="middle" y="26">headers · types · dedupe</text>
+    </g>
+
+    <line x1="280" y1="400" x2="280" y2="440" class="arrow"/>
+
+    <!-- 4 -->
+    <rect x="0" y="444" width="560" height="120" class="box"/>
+    <g transform="translate(280,504)">
+      <text class="label" text-anchor="middle" dominant-baseline="middle">SQL staging + usp_MedOCC_Import()</text>
+      <text class="sub" text-anchor="middle" dominant-baseline="middle" y="26">BULK/ODBC → upsert + audit</text>
+    </g>
+
+    <line x1="280" y1="564" x2="280" y2="604" class="arrow"/>
+
+    <!-- 5 -->
+    <rect x="0" y="608" width="560" height="96" class="box"/>
+    <g transform="translate(280,656)">
+      <text class="label" text-anchor="middle" dominant-baseline="middle">DSIT tables + logs</text>
+    </g>
+  </g>
+
+  <!-- RIGHT: Code strip aligned to same vertical span (704px height) -->
+  <g transform="translate(660,80)">
+    <rect x="0" y="0" width="560" height="704" class="code"/>
+    <text x="20" y="42" class="mono"><tspan class="kw">import</tspan> win32com.client</text>
+    <text x="20" y="72" class="mono"><tspan class="kw">import</tspan> openpyxl, logging, time</text>
+    <text x="20" y="108" class="mono"><tspan class="kw">RETRY_LIMIT</tspan> = 3 • <tspan class="kw">RETRY_DELAY</tspan> = 5</text>
+
+    <text x="20" y="148" class="mono"><tspan class="kw">def</tspan> <tspan class="fn">process_emails</tspan>():</text>
+    <text x="40" y="178" class="mono">inbox = outlook.Folders[<tspan class="sym">"MedOCC"</tspan>].Folders[<tspan class="sym">"Inbox"</tspan>]</text>
+    <text x="40" y="208" class="mono">for msg in inbox.Items:</text>
+    <text x="60" y="238" class="mono">if is_whitelisted(msg): save_attachments(msg)</text>
+
+    <text x="20" y="278" class="mono"><tspan class="kw">def</tspan> <tspan class="fn">harden_excel</tspan>(path):</text>
+    <text x="40" y="308" class="mono">wb = openpyxl.load_workbook(path, data_only=<tspan class="kw">True</tspan>)</text>
+    <text x="40" y="338" class="mono">normalise_headers(); coerce_types()</text>
+
+    <text x="20" y="378" class="mono"><tspan class="kw">def</tspan> <tspan class="fn">import_sql</tspan>(csv):</text>
+    <text x="40" y="408" class="mono">bulk_insert(csv, <tspan class="sym">"dbo.MedOCC_Staging"</tspan>)</text>
+    <text x="40" y="438" class="mono">exec_proc(<tspan class="sym">"usp_MedOCC_Import"</tspan>)</text>
+
+    <text x="20" y="478" class="mono"># ✓ idempotent • ✓ audited • ✓ retriable</text>
+  </g>
+</svg>
