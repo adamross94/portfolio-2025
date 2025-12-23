@@ -22,6 +22,9 @@ import hcas from '../assets/mft-hcas/mfthcas.png';
 //GIRFT
 import girft from '../assets/girft-metrics/girft-logo.png';
 
+//NHS Dev Tools
+import nhsdevtools from '../assets/nhs-dev-tools/nhs-dev-tools.png';
+
 export const projects = [
   {
     slug: 'cancer-62day-ptl-weekly-snapshot',
@@ -190,7 +193,7 @@ export const projects = [
     shortDesc:
       'A documentation site of NHS-ready quickstarts and patterns. It helps BI analysts, data scientists, developers and clinicians ship small, safe dashboards, APIs and pipelines aligned to the NHS 10-Year Plan.',
     mediaType: 'image',
-    mediaUrl: '/images/nhs-dev-tools-hero.png',     // replace with your hero image
+    mediaUrl: nhsdevtools,     // replace with your hero image
     repoUrl: 'https://github.com/your-org/nhs-dev-tools', // or '#'
     siteUrl: 'https://your-site-url.example',        // live docs URL or '#'
     sections: [
