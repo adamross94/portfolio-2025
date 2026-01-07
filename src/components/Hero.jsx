@@ -82,7 +82,9 @@ const Hero = () => {
 
         <div className="flex flex-wrap items-center justify-center gap-4">
           <a
-            href="/resume.pdf"
+            href="/Adam-Ross-CV-2026.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
             className={`flex items-center gap-2 rounded-xl border px-6 py-3 font-semibold transition ${ctaPrimary}`}
           >
             <FaFilePdf />
