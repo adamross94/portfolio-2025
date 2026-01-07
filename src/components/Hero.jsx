@@ -89,7 +89,7 @@ const Hero = () => {
             Resume
           </a>
           <a
-            href="mailto:adam@example.com"
+            href="mailto:adamross1994@gmail.com"
             className={`flex items-center gap-2 rounded-xl border px-6 py-3 font-semibold transition ${ctaSecondary}`}
           >
             <FaEnvelope />

@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { projects } from "../data/projects";
-import { FaGithub, FaExternalLinkAlt } from "react-icons/fa";
+import { FaExternalLinkAlt, FaFilePdf, FaGithub } from "react-icons/fa";
 import BeforeAfterSlider from "./BeforeAfterSlider";
 import { useTheme } from "../context/ThemeContext";
 
 export default function Projects() {
   const { isDark } = useTheme();
+  const isPdfLink = (url = "") => /\.pdf($|[?#])/i.test(url);
   const shellColors = isDark
     ? "bg-[#020805] text-white"
     : "bg-[#f3faf6] text-slate-900";
@@ -107,11 +108,13 @@ export default function Projects() {
         </header>
 
         <ul className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-          {projects.map((p) => (
-            <li
-              key={p.slug}
-              className={`group flex flex-col overflow-hidden rounded-[26px] border transition duration-300 hover:-translate-y-1 ${cardShell}`}
-            >
+          {projects.map((p) => {
+            const siteIsPdf = isPdfLink(p.siteUrl);
+            return (
+              <li
+                key={p.slug}
+                className={`group flex flex-col overflow-hidden rounded-[26px] border transition duration-300 hover:-translate-y-1 ${cardShell}`}
+              >
               <Link
                 to={`/projects/${p.slug}`}
                 className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/80"
@@ -238,14 +241,16 @@ export default function Projects() {
                         className={`inline-flex items-center gap-2 ${linkColor}`}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <FaExternalLinkAlt /> Live
+                        {siteIsPdf ? <FaFilePdf /> : <FaExternalLinkAlt />}
+                        {siteIsPdf ? "PDF" : "Live"}
                       </a>
                     )}
                   </div>
                 </div>
               </Link>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </section>

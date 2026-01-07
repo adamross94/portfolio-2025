@@ -30,678 +30,1219 @@ export const projects = [
     slug: 'cancer-62day-ptl-weekly-snapshot',
     title: 'Cancer 62-Day PTL — Weekly Snapshot (Power BI)',
     shortDesc:
-      'An NHS-styled Power BI remake of the 62-day PTL weekly review (Sections 1–5), with synced Pathway/Tumour/Threshold slicers, focusable KPIs, exportable tables, and a one-click Reset that mirrors the HTML PoC.',
+      'A Power BI rebuild of the NHS Cancer 62-day PTL weekly review (Sections 1–5), designed for fast operational review: synced Pathway/Tumour/Threshold slicers, “focusable” KPIs that don’t break stacked visuals, export-ready tables, a true one-click Reset, and a stable “Week ending” banner.',
     mediaType: 'image',
     mediaUrl: '/images/ptl62/ptl62-cover.png',
-    repoUrl: 'https://github.com/your-username/cancer-62day-ptl', // optional
-    siteUrl: 'https://your-site/cancer-62day-ptl', // optional
+    siteUrl: '/media/cancer-62day-ptl-weekly-snapshot.pdf',
+  
+    
   
     hero: {
       type: 'slider',
       beforeSrc: ptlBefore,
-      afterSrc:  ptlAfter,
+      afterSrc: ptlAfter,
       beforeAlt: 'Legacy PTL spreadsheet (excerpt)',
-      afterAlt:  'Power BI dashboard (Sections 1–5)',
+      afterAlt: 'Power BI dashboard (Sections 1–5)',
       beforeLabel: 'Spreadsheet',
-      afterLabel:  'Dashboard',
-      initial: 54
+      afterLabel: 'Dashboard',
+      initial: 54,
     },
+  
     slider: {
       before: ptlBefore,
-      after:  ptlAfter,
+      after: ptlAfter,
       beforeAlt: 'Legacy PTL extract (excerpt)',
-      afterAlt:  'Power BI dashboard (Sections 1–5)',
+      afterAlt: 'Power BI dashboard (Sections 1–5)',
       beforeLabel: 'Baseline',
-      afterLabel:  'Dashboard',
+      afterLabel: 'Dashboard',
       initial: 56,
-      aspect: 'aspect-[21/9]'
+      aspect: 'aspect-[21/9]',
     },
   
     sections: [
       {
-        heading: 'Introduction',
+        heading: 'The problem this solves',
         content:
-          'This project turns the weekly Cancer 62-day PTL review into a clean, filter-aware Power BI report that mirrors an HTML PoC. Five sections cover: S1 no-DTT waits, S2 with-DTT waits, S3 treated in the last 7 days, S4 referrals/upgrades (7d), and S5 first seen (2WW, 7d). The design keeps NHS styling, clear KPIs, and exportable tables.'
+          'The weekly Cancer 62-day PTL review existed as a large Excel workbook with multiple tabs (S1–S5). It worked, but it was slow to review, easy to misinterpret at speed, and vulnerable to inconsistencies (manual edits, version-control via email attachments, and lots of scrolling). I first captured the requirements as a Collection Review, then built an HTML proof-of-concept to validate the interaction model (filters, layout, KPI language). The final deliverable is the Power BI version—built for ongoing weekly use and confident decision-making.',
       },
+  
       {
-        heading: 'The Technical Challenge',
-        content:
-          'Different shapes per section (stock vs treated vs 7-day flows), a “Waiting Threshold (focus)” that should highlight a single bracket without blanking stacked charts, and table visuals that must retain Pathway × Tumour granularity. The report also needed synced slicers across pages, a true Reset, and a stable Week-ending banner.'
+        heading: 'What I built',
+        content: `A multi-page Power BI report that mirrors the weekly PTL structure:
+  
+  - S1: No-DTT waits + passings
+  - S2: With-DTT waits + passings
+  - S3: treated in last 7 days, bracketed
+  - S4: referrals/upgrades in last 7 days
+  - S5: first seen in last 7 days
+  
+  Each section uses the same global slicers, consistent KPI language, and export-ready tables, so users do not have to re-learn each page.`,
       },
+  
       {
-        heading: 'Architecture Overview',
+        heading: 'The hardest technical constraint (and how I solved it)',
         content:
-          'Sources: weekly section views for S1–S5 plus Date_Check for the banner. Model: facts (q_S1…q_S5, q_DateCheck) with simple dims—Dim_Tumour, Dim_Pathway, Dim_Threshold_S1S2 (0–28/29–62/63–104/>104 + Passing columns for tables), and Dim_TreatedBracket (≤62/63–104/>104). Relationships are one-to-many from dims to facts with single-direction filters to avoid ambiguity.'
+          'Users wanted a “Waiting Threshold (focus)” slicer to highlight a single bracket for KPIs (e.g., >104) without blanking stacked charts, which must continue showing full distributions for context. I solved this with a base-measures + display-measures pattern: base measures compute the true bracket counts and passings (e.g., S1_0_28, S1_29_62, S1_Pass62). Display measures wrap base measures using SWITCH/IF so KPI cards can focus a chosen bracket while stacked visuals still render all segments. This keeps semantics stable and enables the UX stakeholders asked for.',
       },
+  
       {
-        heading: 'DAX Patterns & Measure Strategy',
-        content:
-          'Base measures per section compute waits and passings (e.g., S1_0_28 (M), S1_29_62 (M), S1_Pass28 (M)). Display measures wrap base measures with SWITCH/IF logic so the Threshold slicer can “focus” a bracket for KPIs while stacked charts still show all segments. Section 3 uses bracketed treated measures; Sections 4–5 use simple 7-day counts. The Week-ending label uses MAX over q_DateCheck with ALL to ignore slicers.'
+        heading: 'Data model and architecture',
+        content: `Sources:
+  - weekly section views for S1–S5
+  - Date_Check for the Week Ending banner
+  
+  Model:
+  - facts: q_S1–q_S5, q_DateCheck
+  - dimensions: Tumour, Pathway, WaitingBracket_S1S2 (0–28 / 29–62 / 63–104 / >104 with sort + passing helpers)
+  - treated-bracket table for S3 (<=62 / 63–104 / >104)
+  
+  Relationships:
+  - one-to-many from dimensions to facts
+  - single-direction filters to minimise ambiguity
+  
+  Outcome:
+  - consistent slicer behaviour across pages
+  - tables retain Pathway × Tumour granularity without fragile workarounds.`,
       },
+  
       {
-        heading: 'Interactions & UX',
-        content:
-          'Global sync for Pathway chips, Tumour dropdown, and Waiting Threshold dropdown. KPI cards use “Card (new)” plus a small multi-row overlay for pill labels (in scope / breach risk / high risk / throughput / completions). A per-page bookmark + synced slicers provides a one-click Reset. Icons are watermark PNG/SVGs in card corners for PoC parity.'
+        heading: 'Interactions and UX',
+        content: `- Global slicers: Pathway chips (multi-select), Tumour dropdown, Threshold focus.
+  - KPI cards designed for fast scanning and consistent language across sections.
+  - Reset uses per-page bookmarks + synced slicers for a one-click default state.
+  - Week Ending label uses Date_Check with MAX + slicer-ignoring logic for reliable screenshots and exports.`,
       },
+  
       {
-        heading: 'Section Design',
-        content:
-          'S1: stacked column by Tumour for 0–28/29–62/63–104/>104 and a grid with those waits + Passing 28/62/104. S2: same pattern with DTT. S3: treated (≤62/63–104/>104) donut or bar + simple bracket table. S4: 7-day referrals/upgrades by Tumour and a list. S5: 7-day first-seen by Tumour and a list. All tables are exportable and slicer-aware.'
+        heading: 'Section design (S1–S5)',
+        content: `- S1: stacked distribution by Tumour for 0–28 / 29–62 / 63–104 / >104 + grid with Passing 28/62/104.
+  - S2: same pattern for pathways with Decision to Treat.
+  - S3: treated in last 7 days (<=62 / 63–104 / >104) as a donut or bar + bracket table.
+  - S4: referrals/upgrades in last 7 days by tumour + supporting list.
+  - S5: first seen (2WW) in last 7 days by tumour + supporting list.
+  
+  All tables are exportable and slicer-aware.`,
       },
+  
       {
-        heading: 'Why These Choices',
+        heading: 'Why these choices',
         content:
-          'Separating base and display measures keeps visuals complete while enabling a threshold focus. Dim tables built from facts reduce brittleness and resolve relationship ambiguity. Synced slicers and page bookmarks deliver a trustworthy reset. UI parity with the PoC lowers adoption friction.'
+          'Separating base and display measures protects measure meaning while enabling the threshold focus experience. A star-style model with shared dimensions keeps slicers consistent and avoids relationship ambiguity. Bookmarks + synced slicers deliver a trustworthy reset. Mirroring the HTML PoC reduces adoption friction because users get the same interaction model and visual language they approved early.',
       },
+  
       {
-        heading: 'Improvements Delivered',
-        content:
-          'Consistent KPIs and language across S1–S5; threshold focus without losing stacked context; NHS-styled header and cards; stable “Week ending” label; CSV-ready tables; globally synced slicers with a genuine Reset.'
+        heading: 'Data governance and auditability',
+        content: `- Definitions are made explicit in measures (base vs display) so each KPI remains stable and traceable.
+  - Numerator/denominator-style tables back up headline KPIs for quick reconciliation.
+  - Week Ending is derived from a controlled Date_Check source to keep screenshots/exports consistent.
+  - A predictable model (shared dimensions + single-direction filtering) reduces ambiguity and “why did that change?” behaviour.`,
       },
+  
       {
-        heading: 'What I Shipped',
-        content:
-          'A multi-page Power BI dashboard mirroring the HTML PoC for the 62-day PTL: NHS header, KPI row with pill labels and icons, stacked charts, exportable tables, synced slicers, Reset button, and a Week-ending banner. Robust DAX underpins waits, passings, treated, and 7-day flows.'
+        heading: 'Improvements delivered',
+        content: `- Faster weekly review with focused KPIs that keep distribution context.
+  - Consistent KPI language across Sections 1–5.
+  - NHS-styled layout with a stable Week Ending label.
+  - CSV-ready export tables.
+  - Globally synced slicers with a genuine one-click Reset.`,
       },
+  
       {
-        heading: 'What I’d Ship Next',
-        content:
-          'Unit tests/validation page for measures; a config table for labels and threshold colours; drill-through to patient-level review where permitted; incremental history for trend analyses; RLS/workspace split for clinical vs managerial audiences.'
+        heading: 'What I’d ship next',
+        content: `1) Validation/reconciliation page (bracket sums vs totals, S1–S4 consistency checks).
+  2) Config-driven table for KPI labels and thresholds.
+  3) Trend history (8–12 week lines, week-on-week deltas, variance flags).
+  4) Drill-through to patient-level review where permitted.
+  5) Role-based views/RLS or workspace separation for operational vs leadership audiences.`,
       },
+  
       {
-        heading: 'Reference List (selected)',
-        content:
-          'Sectioned PTL weekly views (S1–S5) and Date_Check; NHS identity standards; DAX patterns for SWITCH-based focus measures, synced slicers with bookmarks, and measure-driven conditional formatting.'
-      }
-    ]
-  },
+        heading: 'References (selected)',
+        content: `- NHS Digital: Cancer 62 Day Patient Target List (CANPTL62).
+  - NHS England: National Cancer Waiting Times Monitoring Dataset Guidance.
+  - Microsoft: DAX SWITCH() patterns for display measures.
+  - Microsoft: Power BI slicers (including synced slicers) and report navigation patterns.`,
+      },
+    ],
+  },  
   {
-    slug:      'girft-metrics',
-    title:     'GIRFT Specialty Metrics: SQL Development & Visualisation',
+    slug: 'girft-metrics',
+    title: 'GIRFT Specialty Metrics — Metadata-driven SQL + Power BI/SSRS',
     shortDesc:
-      'A standardised SQL + Power BI/SSRS framework that converts GIRFT specialty metric metadata into reproducible queries against DB_Medway, delivering patient-level detail and trust-level benchmarking aligned with the Model Health System.',
+      'A metadata-driven SQL framework that compiles GIRFT metric definitions (code groups, recipes, flags, windows) into reproducible queries against DB_Medway—published in Power BI/SSRS for benchmarking, validation, and patient-level drill-down.',
     mediaType: 'image',
-    mediaUrl:  girft, // replace with a dashboard/architecture hero image
-    repoUrl:   '#',                      // internal/private — leave as "#" or swap for a doc link
-    siteUrl:   '#',                      // optional landing/report link, or keep "#"
+    mediaUrl: girft, // keep your original single hero image
+    mediaCaption:
+      'Metadata-driven GIRFT pipeline: definitions → SQL → Power BI/SSRS outputs with traceable drill-down.',
+    repoUrl: 'https://github.com/adamross94/GIRFT',
+  
+    // Primary button -> your repo (as requested)
+    primaryCta: {
+      href: 'https://github.com/adamross94/GIRFT',
+      label: 'View on GitHub',
+      icon: 'github', // if unsupported, switch to 'link'
+    },
+  
+    // Optional secondary button
+    secondaryCta: {
+      href: 'https://gettingitrightfirsttime.co.uk/',
+      label: 'GIRFT Programme',
+      icon: 'link',
+    },
+  
     sections: [
       {
-        heading: 'Introduction',
+        heading: 'The problem this solves',
         content:
-          'GIRFT (Getting It Right First Time) provides specialty-specific metrics for NHS benchmarking. Each metric ships with metadata—definitions for numerators/denominators, code groups, inclusion rules, and time windows. This project turns that metadata into executable SQL for DB_Medway and presents results via Power BI and SSRS, enabling clinicians and managers to explore trust performance and drill down to patient-level records that underpin Model Hospital numbers.',
-        image:   '/images/girft-model-hospital.png',
-        caption: 'Model Hospital/GIRFT context used to align local calculations with national metrics.'
+          'GIRFT provides specialty benchmarking through defined metrics, but the hardest part locally is turning those definitions into consistent, reviewable SQL across a trust’s own data model. Without a standard approach, analysts end up rewriting logic per metric/specialty, results drift between reports, and clinical review slows because it’s unclear how the headline numbers were produced.',
       },
+  
       {
-        heading: 'Problem & Rationale',
-        content:
-          'Trusts often have the GIRFT metric recipes but not a consistent, maintainable way to translate them into SQL across local data models. As a result, benchmarking and case-review workflows are slow and inconsistent. This framework closes the gap by codifying GIRFT metadata into reusable SQL patterns and publishing interactive visuals so teams can validate, compare, and act on the metrics with confidence.'
+        heading: 'What I built',
+        content: `A reusable “metadata → SQL → visuals” pipeline:
+  
+  - Reads GIRFT metric metadata (metrics, recipes, code groups, standard flags)
+  - Materialises code groups into executable sets (ICD-10 / OPCS-4 / clinic codes, etc.)
+  - Builds a canonical spell-level working table (plus OP equivalents where needed)
+  - Applies recipe logic to derive variables/flags deterministically
+  - Calculates numerators/denominators with the correct windows and inclusion rules
+  - Publishes outputs to Power BI (exploration) and SSRS (operational drill-through)`,
       },
+  
       {
-        heading: 'Architecture & Data Flow',
+        heading: 'The hardest technical constraint (and how I solved it)',
         content:
-          'The pipeline reads GIRFT metadata spreadsheets (Metrics, Recipes, CodeGroups, Flags/Standard Flags), materialises code groups as temp tables, builds a unified #Spells_With_Variables table (and #OP_Spells for outpatient), applies “recipes” to derive variables/flags, and then calculates metrics. Outputs feed Power BI dashboards for exploration and SSRS for operational reporting/drill-through. The design mirrors Model Hospital definitions to keep local and national numbers aligned.',
-        image:   '/images/girft-arch.png',
-        caption: 'High-level flow: Metadata → CodeGroups → Variables/Flags → Metrics → Power BI/SSRS.'
+          'The hardest constraint was balancing **maintainability** (hundreds of specialty metrics) with **auditability** (clinicians need to see exactly why a patient is counted). I solved this by keeping a stable, canonical spell table and treating recipes/code groups as the “single source of truth”. Every metric can be traced back through: metric → variable → recipe clause → code group hit(s), so validation is fast and disagreements are diagnosable rather than subjective.',
       },
+  
       {
-        heading: 'SQL Translation Framework',
-        content:
-          '1) CodeGroups: each GIRFT group (e.g., ICD-10/OPCS lists) is created as a temp table (#CodeGroup_*). 2) Variables via Recipes: update statements apply priority rules and logical operators (AND/OR, ranges, LEFT(code,3)) from the Recipes sheet to derive variables in #Spells_With_Variables. 3) Flags: additional spell/episode flags (e.g., index/return admissions, readmissions windows, mortality windows) are computed to match GIRFT logic. 4) Metrics: each metric query (e.g., PN7103 day-case rate) aggregates over the derived variables with configurable date windows.',
-        image:   '/images/girft-recipes.png',
-        caption: 'Recipes + CodeGroups drive deterministic, repeatable SQL derivations.'
+        heading: 'Data model and architecture',
+        content: `**Inputs**
+  - GIRFT metadata spreadsheets (Metrics / Recipes / CodeGroups / Flags)
+  - DB_Medway spell/episode/procedure/diagnosis sources (plus supporting lookup tables)
+  
+  **Working sets**
+  - #Spells_With_Variables (spell-level canonical table)
+  - #OP_Spells (outpatient pathway variant where required)
+  - #CodeGroup_* temp tables (materialised metadata)
+  
+  **Outputs**
+  - Metric-level aggregates (trust-level benchmarking, trends)
+  - Patient-level drill-through datasets (case review / reconciliation)
+  - Power BI pages for exploration; SSRS for operational delivery`,
+        image: '/images/girft-arch.png',
+        caption: 'End-to-end: Metadata → CodeGroups → Variables/Flags → Metrics → Power BI/SSRS.',
       },
+  
       {
-        heading: 'How It Runs',
-        content:
-          'The framework executes in five steps: (1) optionally drop temp tables for a clean run; (2) create/populate #CodeGroup_* temp tables from the CodeGroups sheet; (3) build and populate #Spells_With_Variables (and #OP_Spells if needed) from DB_Medway sources; (4) apply Recipes/Flags update statements to derive GIRFT variables; (5) run metric queries from the Metrics sheet (e.g., numerator/denominator with 12-month windows to quarter end). Parameters allow switching specialties and periods without rewriting logic.',
-        image:   '/images/girft-run.png',
-        caption: 'Stepwise execution enables specialty/date re-runs and quick validation.'
+        heading: 'How it runs (end-to-end flow)',
+        content: `The framework mirrors how GIRFT metrics are described, but in a form the database can execute:
+  
+  1) **Code groups**: each named group becomes a temp table (e.g. #CodeGroup_*).
+  2) **Base cohort**: build a single “one row per spell” working set (e.g. #Spells_With_Variables).
+  3) **Recipes → variables**: recipe rows compile into update logic (AND/OR rules, prefix matches, ranges, thresholds).
+  4) **Standard flags**: index events, returns/readmissions, mortality windows, exclusions—computed once, reused everywhere.
+  5) **Metric evaluation**: numerator/denominator queries run against derived variables with parameterised periods (e.g. quarter-end / trailing-12).
+  
+  Specialty and reporting window are parameterised so re-runs don’t require rewriting logic.`,
+        image: '/images/girft-recipes.png',
+        caption: 'Recipes and CodeGroups compiled into deterministic spell variables.',
       },
+  
       {
-        heading: 'Visualisation (Power BI & SSRS)',
-        content:
-          'Power BI dashboards surface trust-level results, trends, and peer comparisons, with filters for specialty, period, and points-of-delivery. SSRS reports provide operational, printable outputs and drill-through to patient-level lines for clinical case review. Together they serve both exploratory and formal reporting needs while keeping definitions consistent with Model Hospital.',
-        image:   '/images/girft-dashboard.png',
-        caption: 'Interactive dashboards for exploration; SSRS for operational views and drill-through.'
+        heading: 'Interactions and UX (Power BI & SSRS)',
+        content: `Power BI surfaces trust-level results, trends, and peer comparisons with filters for specialty, period, and operational groupings. SSRS provides operational, printable outputs and drill-through to patient-level lines for clinical case review. Both are powered by the same derived variables/flags to keep definitions consistent and reduce “two versions of the truth”.`,
       },
+  
       {
-        heading: 'Validation & Governance',
+        heading: 'Why these choices',
         content:
-          'Each metric is cross-checked against existing reports/Model Hospital values using the same windows and inclusion rules. Discrepancies trigger a trace-through from metric → variable → codegroup hit to verify data lineage. The framework is documented end-to-end (inputs, assumptions, SQL patterns) and designed for repeatability with change-controlled metadata and scripts.'
+          'A canonical spell table keeps variable derivation stable, reusable, and performance-friendly. Treating metadata as the source of truth makes changes safer: updates happen in code groups/recipes rather than bespoke query edits. Splitting “derive once, reuse everywhere” (standard flags) from “evaluate per metric” reduces duplication and makes reconciliation quicker.',
       },
+  
       {
-        heading: 'Challenges & Mitigations',
-        content:
-          '• Data variability across trusts: abstracted codegroups and parameterised recipes reduce rewrites. • Large volumes: careful indexing and batching on #Spells build; only necessary joins for updates; temp tables scoped per run. • User adoption: role-specific views (management vs. clinical), clear glossary mapping to GIRFT terminology, and training built into dashboards.'
+        heading: 'Data governance and auditability',
+        content: `- Metrics are traceable end-to-end (headline → patient list → rule hit), supporting clinical review and reconciliation.
+  - Assumptions are made explicit (spell construction, anchor dates, windows, exclusions) so reruns are reviewable.
+  - Metadata + SQL can be change-controlled together to keep history and reproducibility intact.
+  - Outputs separate aggregate benchmarking from patient-level drill-through to support least-privilege access models.`,
       },
+  
       {
-        heading: 'Outcomes & Impact',
-        content:
-          'The framework standardises GIRFT calculations locally, enabling fast reproduction of specialty metrics and patient-level drill downs. Clinical teams gain a transparent path from headline figures to individual cases for review; management gains comparable, trusted numbers for benchmarking and performance improvement; analysts gain a reusable pattern to add specialties without starting from scratch.'
+        heading: 'Improvements delivered',
+        content: `- Faster onboarding of new specialties (reuse patterns instead of rewriting logic).
+  - Clear audit trail from headline KPI to patient list for clinical review.
+  - More consistent benchmarking and fewer “why is this number different?” loops.
+  - A single, repeatable route from GIRFT definitions to BI outputs.`,
       },
+  
       {
-        heading: 'Next Steps',
-        content:
-          'Extend coverage to additional specialties; add automated refresh via SQL Agent; integrate parameter pickers for quarter-end dates; publish a lightweight data dictionary and validation pack; and template a “new specialty wizard” that reads a metadata file and scaffolds the required codegroups, recipes, flags, and metric queries automatically.'
-      }
-    ]
+        heading: 'What I’d ship next',
+        content: `1) A “new specialty wizard” that scaffolds code groups/recipes/flags from a metadata file.
+  2) A validation pack page (rule coverage, missing-code checks, numerator/denominator sanity tests).
+  3) Automated refresh + parameterised quarter-end runs (SQL Agent).
+  4) A compact glossary/data dictionary that maps GIRFT language to local fields consistently.`,
+      },
+  
+      {
+        heading: 'References (selected)',
+        content: `- GIRFT (Getting It Right First Time): https://gettingitrightfirsttime.co.uk/
+  - Model Health System / Model Hospital context: https://model.nhs.uk/ (access-dependent)
+  - Microsoft Learn (Power BI / SSRS): https://learn.microsoft.com/power-bi/ and https://learn.microsoft.com/sql/reporting-services/`,
+      },
+    ],
   },  
   {
     slug: 'nhs-dev-tools',
-    title: 'NHS Dev Tools: Role-based Open-Source Quickstarts',
+    title: 'NHS Dev Tools — Role-based Quickstarts for NHS Analytics & Apps',
     shortDesc:
-      'A documentation site of NHS-ready quickstarts and patterns. It helps BI analysts, data scientists, developers and clinicians ship small, safe dashboards, APIs and pipelines aligned to the NHS 10-Year Plan.',
+      'A Docusaurus documentation hub of NHS-ready quickstarts and patterns. Role-based journeys help BI analysts, data scientists, developers and clinicians ship small, safe dashboards, APIs and pipelines with practical IG guardrails and reproducible defaults.',
     mediaType: 'image',
-    mediaUrl: nhsdevtools,     // replace with your hero image
-    repoUrl: 'https://github.com/your-org/nhs-dev-tools', // or '#'
-    siteUrl: 'https://your-site-url.example',        // live docs URL or '#'
+    mediaUrl: nhsdevtools,
+    mediaCaption:
+      'Role-based journeys + “Learn” modules: install fast, build safely, share repeatably.',
+    repoUrl: 'https://github.com/adamross94/nhs-dev-tools',
+    siteUrl: 'https://nhsdev.tools/',
+  
+    // Primary -> live docs (portfolio-friendly)
+    primaryCta: {
+      href: 'https://nhsdev.tools/',
+      label: 'Visit the docs',
+      icon: 'link',
+    },
+  
+    // Secondary -> repo
+    secondaryCta: {
+      href: 'https://github.com/adamross94/nhs-dev-tools',
+      label: 'View on GitHub',
+      icon: 'github', // use 'link' if you don’t have a github icon key
+    },
+  
     sections: [
       {
-        heading: 'Introduction',
+        heading: 'The problem this solves',
         content:
-          'NHS Dev Tools is a documentation and quickstart hub that reduces time-to-value for NHS data and digital teams. It provides 10-minute installs, 90-minute builds, and week-one plans for dashboards, APIs and data pipelines. The content is role-based (Personas) and technology-based (Learn) with built-in IG guardrails, so teams can ship something small and safe this week, not next quarter.',
+          'NHS analytics and digital teams often lose weeks to “getting started” work that should be repeatable: environment setup, safe SQL access, secrets/config, refresh patterns, deployment steps, and basic governance checks. That creates uneven quality, slows onboarding, and makes small projects feel risky to ship. NHS Dev Tools reduces that friction with opinionated, copy-ready quickstarts and consistent guardrails—so teams can deliver something small and safe this week, not next quarter.',
+      },
+  
+      {
+        heading: 'What I built',
+        content: `A documentation + quickstart site designed around real NHS roles and delivery constraints:
+  
+  - **Role-based journeys (Personas)**: BI Analyst, Data Scientist, Developer, Data Engineer, Clinician-Researcher, IG lead
+  - **Technology “Learn” modules**: languages, databases, dashboards, web/API frameworks, cloud/hosting, tooling
+  - **Practical build paths**: 10-minute installs, 90-minute builds, and “week-one” plans
+  - **Safe-by-default examples**: synthetic/de-identified data patterns, secrets practices, and small-number considerations`,
         image: '/images/nhs-dev-tools-overview.png',
-        caption: 'Discover → Personas → Learn → Build → Share → AI & ML.'
+        caption: 'Discover → Personas → Learn → Build → Share → AI & ML.',
       },
+  
       {
-        heading: 'Problem & Rationale',
-        content:
-          'NHS teams face choice overload and inconsistent patterns across analytics and apps. Many projects stall on basics like secrets, safe refreshes, or deployment steps. The site addresses this with opinionated quickstarts that show exactly how to install, connect to SQL safely, publish a minimal dashboard or API, and measure impact. It aligns with the 10-Year Plan by focusing on data + AI foundations that enable digital access, prevention and productivity.'
-      },
-      {
-        heading: 'Who It’s For',
-        content:
-          '• BI Analysts who need reproducible KPIs and dashboards.\n• Data Scientists who want clean pipelines and small deployments.\n• Developers building secure APIs and thin UIs over NHS data.\n• Data Engineers standardising ETL and validation.\n• Clinician-Researchers sharing reproducible analysis.\n• Information Governance leads defining safe defaults and checks.'
-      },
-      {
-        heading: 'Information Architecture',
-        content:
-          'The site is organised around a simple journey: Discover → Personas → Learn → Build → Share → AI & ML. Personas provide role-based quickstarts. Learn is grouped into Languages, Databases, Dashboards, Web & API Frameworks, Cloud & Hosting and Tooling. Each page offers 10-minute setup, a “hello NHS” example, IG notes and next steps.',
+        heading: 'How it works (the site flow)',
+        content: `The navigation follows a single journey from “I’m new here” to “I shipped something”:
+  
+  1) **Discover** — what the site is for and how to use it
+  2) **Personas** — role-based quickstarts that set safe defaults fast
+  3) **Learn** — short modules grouped by domain (SQL, Python, Dash, React, APIs, etc.)
+  4) **Build** — end-to-end mini patterns (connect → transform → visualise/API)
+  5) **Share** — deployment notes, screenshots/export hints, and “what to measure”
+  6) **AI & ML** — practical starter patterns with guardrails`,
         image: '/images/nhs-dev-tools-ia.png',
-        caption: 'Navigation map and Learn taxonomy used across the docs.'
+        caption: 'Information architecture and Learn taxonomy.',
       },
+  
       {
-        heading: 'Authoring Model',
+        heading: 'The hardest technical constraint (and how I handled it)',
         content:
-          'Markdown-first with MDX components for consistency: JourneyStrip (journey banner), NextSteps (guided navigation), SeeAlso (related links), Tabs/TabItem for OS-specific steps, and card-grid helpers. Content uses consistent slugs, front-matter and emoji-labelled sidebars. Examples emphasise parity across Python, R and JS where helpful.'
+          'The hardest constraint is balancing simplicity (fast starts) with NHS reality (governance, IG, operational safety). I handle this with a consistent “safe-by-default” structure on every page: minimal working example first, then NHS-specific constraints (secrets, de-identification, suppression considerations, logging, refresh safety) presented as checklists and callouts—so speed doesn’t come at the cost of good practice.',
       },
+  
       {
-        heading: 'Tech Stack',
-        content:
-          'Built on Docusaurus 2 (React + MDX), TypeScript components and CSS Modules for styling. Sidebar is category-driven with a generated index for each domain. Hosted on static-friendly platforms (e.g., GitHub Pages, CloudFront, Azure Static Web Apps). CI can validate links and build on pull requests.'
+        heading: 'Architecture and authoring model',
+        content: `The site stays consistent by combining predictable structure with reusable components:
+  
+  - **Markdown-first** docs with MDX for rich, repeatable patterns
+  - Shared components such as **JourneyStrip**, **NextSteps**, **SeeAlso**, and **Tabs/TabItem**
+  - A repeatable page recipe: install → hello-world → NHS notes → next steps
+  - A predictable docs/ folder layout and IDs to keep sidebars and routes stable`,
       },
+  
       {
-        heading: 'IG & Safety',
-        content:
-          'Every quickstart emphasises synthetic/de-identified data, secrets in a secret store (Key Vault/Secrets Manager), TLS for SQL connections, suppression rules for small numbers, and documentation of data definitions. Pages include copyable IG checklists and “what not to do” callouts.'
+        heading: 'Tech stack and delivery',
+        content: `- **Docusaurus 2** (React + MDX) for fast authoring and navigation
+  - TypeScript components + CSS modules for reusable UI patterns
+  - Static-hosting friendly deployment (with CI builds and link checks)
+  - Lightweight governance: consistent front-matter, consistent slugs, consistent “next steps”`,
       },
+  
       {
-        heading: 'What’s Included',
-        content:
-          '• 6 persona quickstarts (BI Analyst, Data Scientist, Developer, Data Engineer, Clinician-Researcher, Information Governance).\n• Learn pages for Python, R, SQL (generalised), JavaScript, DuckDB, Dash, Shiny, Evidence.dev, React, Next.js, FastAPI, Express, Docker, VS Code, Git/GitHub, Secrets & .env, Azure, AWS, plus FDP and PowerToys.\n• Build/Share overview pages with deployment presets and operational metrics.'
+        heading: 'Data governance and safety guardrails',
+        content: `Every quickstart leans on practical guardrails:
+  
+  - Synthetic / de-identified examples by default
+  - Secrets stored outside the repo (secret store + .env patterns)
+  - “Least privilege” principles and secure connection patterns where applicable
+  - Clear callouts for small-number handling and safe publishing habits
+  - “What not to do” sections to reduce accidental unsafe patterns`,
       },
+  
       {
-        heading: 'Architecture & Page System',
-        content:
-          'Content lives under docs/ with predictable folders and IDs to match the sidebar. MDX pages import shared components for journey strips and callouts, keeping visuals and tone consistent. The sidebar groups Learn into domains and adds emoji labels to improve wayfinding.'
+        heading: 'Improvements delivered',
+        content: `- Faster onboarding: one place to learn the shared patterns
+  - More consistent delivery: reusable defaults for secrets, refresh, and publishing
+  - Reduced review friction: repeatable scaffolds and clearer expectations
+  - Better reuse: common mini-patterns become templates rather than one-offs`,
       },
+  
       {
-        heading: 'Outcomes & Impact',
-        content:
-          'Teams move faster from zero to something clickable, with consistent IG guardrails. Common patterns (SQL view → Parquet extract → Dash/Evidence.dev) become repeatable. New joiners get a single place to learn the stack; experienced staff get standardised scaffolds that reduce review time.'
+        heading: 'Operational metrics (what success looks like)',
+        content: `- **Time to first working dashboard/API** from a clean clone
+  - **% of examples that run end-to-end** without manual edits
+  - PR review time and doc build failure rate (broken links/builds)
+  - Page completion rate (do users reach “Next steps”?)
+  - Adoption signals: reuse of templates and guardrail checklists`,
       },
+  
       {
-        heading: 'Operational Metrics',
-        content:
-          '• Time to first working dashboard/API from a clean clone.\n• % of examples that run end-to-end without manual edits.\n• PR review time and change failure rate for doc updates.\n• Page views and completion of “next steps”.\n• Adoption of IG checklists and secrets patterns.'
+        heading: 'What I’d ship next',
+        content: `1) **Template repos per persona** (one-click “start here” projects)
+  2) More **end-to-end kits** (SQL → transform → API → UI)
+  3) Better **search and task-based entry points**
+  4) “Printable packs” export (PDF bundles for onboarding/training)
+  5) A “golden path” CI preset for link checks + example validation`,
       },
+  
       {
-        heading: 'Challenges & Mitigations',
-        content:
-          'Keeping examples simple yet realistic; solved by using synthetic NHS-like schemas and minimal, auditable pipelines. MDX syntax pitfalls; addressed with a component kit and linting. Sidebar sprawl; addressed with a domain taxonomy and generated indices.'
+        heading: 'References (selected)',
+        content: `- Docusaurus docs: https://docusaurus.io/docs
+  - NHS England digital & transformation context: https://www.england.nhs.uk/transforming-care/
+  - NHS Digital (now NHS England) data collections context (where relevant): https://digital.nhs.uk/data-and-information
+  - UK GDPR / ICO guidance (handling personal data): https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/
+  - OWASP (secure defaults / secrets hygiene): https://owasp.org/`,
       },
-      {
-        heading: 'Roadmap',
-        content:
-          'Template repos for each persona; more end-to-end kits (SQL → API → UI); search improvements; a print/PDF export path for packs; and more FDP-specific patterns as regional capabilities mature.'
-      }
-    ]
-  },
+    ],
+  },  
   {
     slug: 'medway-hcas-fringe',
-    title: 'Medway HCAS Fringe Eligibility',
+    title: 'MFT HCAS — Evidence Pack for 5% Fringe Eligibility',
     shortDesc:
-      'A data-driven case arguing that Medway NHS Foundation Trust meets the criteria for the 5% Fringe High Cost Area Supplement (HCAS) through cost-of-living parity, cross-boundary patient flows, and workforce evidence.',
+      'A data-driven case that Medway NHS Foundation Trust operates under fringe-level cost and labour-market pressures (housing, rent, commuting, workforce churn) and should be added to the 5% High Cost Area Supplement (HCAS) “Fringe” zone.',
     mediaType: 'image',
     mediaUrl: hcas,
-    repoUrl: 'https://github.com/your-username/medway-hcas-fringe', // optional
-    siteUrl: 'https://your-site/medway-hcas-fringe', // optional
-    sections: [
-      {
-        heading: 'Introduction',
-        content: `This project builds an evidence base that Medway NHS Foundation Trust operates under pressures comparable to recognised 5% “Fringe” HCAS zones. It triangulates official pay policy, local house price and rent trends, commuting costs, cross-border patient flows, and workforce stability to show that Medway aligns with fringe-area dynamics and should be considered for inclusion at the next policy review.`
-      },
-      {
-        heading: 'The Technical Challenge',
-        content: `Unlike a single-API dataset, this problem blends policy text, geography locked to legacy PCT boundaries, and heterogeneous indicators (ONS/UKHPI, local councils, rail fares, workforce papers). The challenge was to (1) normalise sources into a comparable frame for Medway versus nearby fringe areas, (2) quantify practical parity (rents, housing, commuting, council tax), (3) evidence London-adjacent service patterns, and (4) connect findings to the actual decision pathway (NHSPRB ↔ NHS Staff Council ↔ DHSC).`,
-        image: '/images/hcas/hcas-arch.png',
-        caption: 'High-level pipeline: ingest → validate → compare → narrate → policy mapping.'
-      },
-      {
-        heading: 'Data & Methodology',
-        content: `• Sources: NHSPRB remit & AfC Handbook (HCAS Annexes), ONS/UKHPI for prices & rents, council tax schedules, rail season-ticket guidance, democracy minutes for stroke network flows, Medway FT publications, and case studies on recruitment/retention.\n
-  • Approach: ETL into a small warehouse (schema: cost_of_living, fares, council_tax, flows, workforce). Standardise geography to current LAs; map fringe zones via Annex 8 legacy PCT lists. Build comparators for Medway vs Dartford/Gravesham/Thurrock/West Herts cohorts.\n
-  • Outputs: narrative sections, comparison table, and evidence links the reader can audit.`
-      },
-      {
-        heading: 'Cost of Living: Medway vs Fringe Areas',
-        content: `🏠 Housing & Rents\nONS/UKHPI shows sustained house-price growth in Medway with private rents rising materially year-on-year—comparable to fringe districts around London. This pushes take-home affordability in ways similar to Dartford, Gravesham and Thurrock.\n\n🚆 Commuting\nSeason-ticket costs for Medway’s London commuters (e.g., Gillingham) are substantial—especially when high-speed validity is required—often comparable to or above some Essex/Kent fringe routes on non-HS lines. This erodes disposable income similarly to recognised fringe zones.\n\n💡 Council Tax & Everyday Costs\nBand D council tax levels for Medway sit in the same ballpark as neighbouring Kent/Essex authorities, adding to baseline household pressure. Day-to-day utilities and groceries are regionally typical, so housing + transport + council tax become the differentiators.\n\n**Takeaway:** On multiple real-world cost fronts (rents, mortgage/price trends, rail, council tax), Medway looks and feels like a fringe-area trust for staff wallets.`
-      },
-      {
-        heading: 'London Patient Inflows & Catchment',
-        content: `Fringe trusts treat appreciable volumes from bordering London boroughs. Kent & Medway stroke planning explicitly acknowledged Bexley flows into Darent Valley Hospital (Dartford). Medway itself anchors regional specialist work (e.g., West Kent Urology Cancer Centre at Medway), and wider mutual-aid pathways during COVID reinforced London-adjacent service networks. While Medway sits further from the boundary than Dartford, its role in a London-influenced system means patient demand patterns and operational realities mirror fringe trusts.`,
-        image: '/images/hcas/hcas-flows.png',
-        caption: 'Cross-boundary flows and regional service arrangements.'
-      },
-      {
-        heading: 'Workforce Stability & Retention',
-        content: `Evidence highlights a historically high nursing vacancy at Medway that was driven down via targeted recruitment, yet retention pressure persists. Turnover around the low-mid-teens keeps the system sensitive to pay differentials. Staff living within commuting range of fringe/outer-London providers can earn more via HCAS—an asymmetry that encourages leakage unless addressed.`,
-        image: '/images/hcas/hcas-workforce.png',
-        caption: 'Recruitment successes vs. ongoing retention risk from HCAS differential.'
-      },
-      {
-        heading: 'Policy & Decision Pathway',
-        content: `HCAS is part of Agenda for Change. Annex 8 defines the inner/outer/fringe zones (fringe defined on legacy PCT geographies), while Annex 9 sets rates (fringe = 5% with min/max caps). Crucially, it is open to the NHS Pay Review Body (NHSPRB) to recommend future geographic coverage of HCAS, and employers/staff organisations can propose supplements where none exist. Practically, a credible, evidence-led case from Medway FT and partners can be escalated via Staff Council/PRB, with DHSC sign-off.`,
-        image: '/images/hcas/hcas-policy.png',
-        caption: 'How an evidence pack flows into the AfC/PRB process.'
-      },
-      {
-        heading: 'Key Findings',
-        content: `• Cost parity: Rent growth, house-price trends, and council-tax levels put Medway close to fringe comparators; rail costs amplify the squeeze.\n• System role: Cross-boundary pathways (e.g., stroke flows to DVH; regional urology cancer centre at Medway) reflect London-adjacent operations.\n• Workforce: Retention remains sensitive to HCAS differentials; historic vacancy reductions show progress but also the cost of churn.\n• Feasibility: The PRB/Staff Council pathway exists to consider boundary updates where evidence shows de-facto fringe conditions.`
-      },
-      {
-        heading: 'Architecture & Implementation',
-        content: `Stack: Python ETL (requests/pandas) → Postgres warehouse (schemas for prices/rents/fares/council_tax/flows/workforce) → dbt transforms for tidy, comparable tables → visual layer (Power BI or a React/Chart.js microsite) → narrative report with linked references.\n\nReproducibility: every chart derives from versioned CSV/parquet snapshots with metadata (source, date, method).`,
-        image: '/images/hcas/hcas-stack.png',
-        caption: 'Reproducible pipeline feeding the narrative.'
-      },
-      {
-        heading: 'What I’d Ship Next',
-        content: `1) Add postcode-level HES inflow sampling (DA postcodes) to quantify London-origin volumes; 2) expand fare comparisons (high-speed vs classic) across candidate commuter routes; 3) produce a formal business-case pack aligned to NHSPRB/Staff Council expectations (exec summary, evidence tables, stakeholder endorsements).`
-      },
-      {
-        heading: 'Reference List (selected)',
-        content: `• AfC Handbook – Annex 8 (zones) & Annex 9 (rates)\n• Parliamentary written answer on HCAS coverage recommendations\n• ONS/UKHPI Medway prices and ONS rents bulletins\n• Medway Council/Kent CC council-tax bulletins\n• Kent & Medway stroke review minutes (Bexley → DVH flows)\n• Medway FT: West Kent Urology Cancer Centre\n• Workforce evidence (turnover/vacancy case study)\n• Rail season-ticket guidance and Campaign for Better Transport tables`
-      }
-    ]
-  },
-  {
-    slug: 'dsit-aws-signoff',
-    title: 'Automated AWS-Based DSIT Email & Sign-Off',
-    shortDesc:
-      'Serverless pipeline that builds Outlook-perfect DSIT emails and captures one-click sign-offs via secure, trackable links.',
-    mediaType: 'image',
-    mediaUrl: '/images/dsit/aws-dsit-cover.png',
-    repoUrl: 'https://github.com/your-username/dsit-aws-signoff', // optional
-    siteUrl: 'https://your-site/dsit-aws-signoff', // optional
-    hero: {                            // ⬅️ add this
-      type: 'slider',
-      beforeSrc: dsitBefore,
-      afterSrc:  dsitAfter,
-      beforeAlt: 'Outlook Email (excerpt)',
-      afterAlt:  'MJML Email (excerpt)',
-      beforeLabel: 'Plain Text',
-      afterLabel:  'MJML',
-      initial: 52
-    },
-     // ↓↓↓ NEW: this makes ProjectPage render the slider instead of the static image
-     slider: {
-      before: dsitBefore,
-      after:  dsitAfter,
-      beforeAlt: 'Outlook Email (excerpt)',
-      afterAlt:  'MJML Email (excerpt)',
-      beforeLabel: 'Plain Text',
-      afterLabel:  'MJML',
-      initial: 55,             // starting split %
-      aspect: 'aspect-[21/9]', // or 'aspect-video'
-    },
-    sections: [
-      {
-        heading: 'Introduction',
-        content: `This project converts DSIT’s manual, attachment-based emails into a fully automated, auditable workflow on AWS. A Lambda job merges fresh metrics into a bulletproof HTML template tailored for Outlook, sends via SES, and embeds a unique “Sign Off” link per recipient. Clicks are validated and recorded in DynamoDB for real-time approval tracking.`
-      },
-      {
-        heading: 'The Technical Challenge',
-        content: `Outlook rendering quirks, reliable daily scheduling, and secure one-click approvals were the three big hurdles. The system needed: (1) table-based, inline-CSS email that survives Outlook; (2) deterministic daily generation/sending; (3) a tamper-resistant sign-off token flow that logs approvals instantly—without exposing internal systems.`,
-        image: '/images/dsit/arch.jpg',
-        caption: 'High-level flow: ETL → HTML render → SES send → tokenised sign-off → DynamoDB log.'
-      },
-      {
-        heading: 'Architecture Overview',
-        content: `• Data layer: Daily CSV (or direct SQL) exported to S3.\n• Email render: Lambda reads CSV → fills merge fields in an HTML/MJML-to-HTML template → inlines CSS → produces Outlook-safe HTML.\n• Delivery: Lambda sends via Amazon SES (production access + verified identities).\n• Sign-off: Each email carries a unique URL with a signed token to an API Gateway endpoint. A Lambda authorizer validates the token; a handler records the decision in DynamoDB (with TTL and idempotency keys).\n• Observability: CloudWatch metrics/alarms on Lambda errors, SES bounces/complaints, API 4xx/5xx; optional Slack/Teams webhooks.`,
-        image: '/images/dsit/stack.png',
-        caption: 'Serverless stack: S3, Lambda, SES, API Gateway, DynamoDB, CloudWatch.'
-      },
-      {
-        heading: 'Email Template Engineering (Outlook-First)',
-        content: `The template uses table-based layout and inline CSS only; CTAs are “bulletproof buttons” (VML-backed) so they render even with images off. A nested <span> keeps text weight/colour stable across OWA/desktop Outlook. Lists and spacing use email-safe patterns for consistent line-height and hit-targets.`,
-        image: '/images/dsit/email.png',
-        caption: 'Bulletproof table layout and VML-backed CTA ensure consistent Outlook rendering.'
-      },
-      {
-        heading: 'Secure One-Click Sign-Off',
-        content: `Every recipient gets a unique link (e.g., https://api.example/signoff?token=...). The token encodes recipient+send ID and expiry; the API Gateway front door uses a Lambda/JWT authorizer to validate signature and freshness before the sign-off Lambda writes an approval record to DynamoDB. Duplicate clicks are deduped using a composite key, and tokens can be single-use.`
-      },
-      {
-        heading: 'End-to-End Workflow',
-        content: `1) Morning ETL prepares Type 3 data and exports consolidated DSIT metrics to CSV.\n2) Scheduled Lambda loads CSV from S3 and merges metrics (Overall, Type 1, Type 3, etc.) into the HTML.\n3) Lambda sends the email via SES to the distribution list; each row gets a personalised tokenised link.\n4) Recipient reviews KPIs and clicks “Sign Off”.\n5) API Gateway → Lambda authorizer validates → handler writes an immutable sign-off record to DynamoDB and confirms to the team (email/Teams).`
-      },
-      {
-        heading: 'Data Model & Governance',
-        content: `DynamoDB table “dsit_signoffs”\n• PK: recipient_id | SK: send_id\n• attrs: timestamp, status, user_agent, ip_hash\n• ttl: auto-expiry for stale tokens\n• gsis: by send_id for dashboarding\nAll identities used to send mail are SES-verified; account runs out of SES sandbox; soft-fail paths capture bounces/complaints for list hygiene.`
-      },
-      {
-        heading: 'Operations & Reliability',
-        content: `• Email testing: SES mailbox simulator for success/bounce/complaint pre-flight.\n• Delivery: DKIM/SPF/DMARC on the sending domain; SES configuration sets for event publishing.\n• Alerting: CloudWatch alarms on Lambda errors, API 5xx, SES bounce spikes.\n• Rollback: Versioned templates in S3; blue/green by template version.`
-      },
-      {
-        heading: 'Costs',
-        content: `• SES: $0.10 per 1,000 outbound emails; attachments billed per-GB. A revised free tier grants up to 3,000 message charges/mo for 12 months after you start using SES (see pricing page for nuances).\n• Lambda: 1M requests + 400k GB-seconds free tier monthly; beyond that, per-request and per-GB-second are very low for short jobs.\n• DynamoDB: Always-free tier includes 25GB storage plus 25 RCU / 25 WCU—ample for daily sign-off logs at modest scale.\nFor typical DSIT volumes, monthly costs are usually in the “pennies to a few units” range unless distribution lists or attachment sizes surge.`,
-        image: '/images/dsit/costs.png',
-        caption: 'SES + Lambda + DynamoDB remain low-cost for daily, small-payload workloads.'
-      },
-      {
-        heading: 'What I Shipped',
-        content: `• An Outlook-perfect, inline-CSS/table email with merge fields.\n• A scheduled Lambda that composes and sends via SES.\n• Tokenised one-click sign-off captured in DynamoDB with dashboards over send_id.\n• CloudWatch alarms and SES event publishing for deliverability and health.`
-      },
-      {
-        heading: 'What I’d Ship Next',
-        content: `1) Step Functions orchestrator for retries and human-in-the-loop holds.\n2) Admin UI for resend/override and live sign-off board.\n3) Optional SSO-confirmed sign-off path (Cognito/JWT) for higher-assurance approvals.\n4) Per-service KPI cards with trend sparklines and percentile markers in the email body.`
-      },
-      {
-        heading: 'Reference List (selected)',
-        content: `• SES pricing & current free tier (message-charge model).\n• Lambda free tier and pricing.\n• DynamoDB always-free details (25GB + 25 RCU/WCU).\n• SES SDK/API sending examples and sandbox/production guidance.\n• SES mailbox simulator for safe testing.\n• API Gateway JWT/Lambda authorizers for token validation.\n• Bulletproof buttons / Outlook-safe techniques (VML, inline CSS).`
-      }
-    ]
-  },
-  {
-    slug: 'medocc-dsit-rpa',
-    title: 'MedOCC DSIT RPA: Email → Excel Normalisation → SQL Import',
-    shortDesc:
-      'Windows-scheduled Python robot that ingests MedOCC Excel attachments from Outlook, hardens the workbook for ETL, and (optionally) triggers a SQL Agent job—end-to-end with retries, logging, and idempotency.',
-    mediaType: 'image',
-    mediaUrl: '/media/medocc_dsit_rpa.svg',
-    repoUrl: 'https://github.com/your-username/medocc-dsit-rpa', // optional
-    siteUrl: 'https://your-site/medocc-dsit-rpa', // optional
-    sections: [
-      {
-        heading: 'Introduction',
-        content: `This RPA flow removes manual DSIT steps around the MedOCC feed. It watches a shared mailbox for daily spreadsheets, saves them to a controlled UNC path, converts all formulas to values, applies format tidying, and can kick off a downstream SQL Server import job. Everything is orchestrated by Windows Task Scheduler before the morning stand-up.`
-      },
-      {
-        heading: 'The Technical Challenge',
-        content: `Three pain points shaped this design: (1) Outlook’s COM model & date-filters are strict about filter syntax and time formatting; (2) Excel files arrive with volatile formulas and inconsistent shapes that break ETL; (3) any hand-off to SQL Agent must be reliable, observable, and least-privilege.`
-      },
-      {
-        heading: 'Architecture Overview',
-        content: `• **Trigger**: Windows Task Scheduler @ 08:20 runs a small batch wrapper.\n• **Ingestion**: Outlook COM → ` + 
-                 `Items.Restrict(ReceivedTime window) + allowlisted Sender.Name → save each attachment via Attachment.SaveAsFile.\n` + 
-                 `• **Normalisation**: openpyxl loads workbook twice (one with formulas, one with data-only) to replace formulas with last-calculated values; applies filters, widths, number formats, freeze panes.\n` + 
-                 `• **Handoff (optional)**: pyodbc → msdb.dbo.sp_start_job to launch the ETL job.\n` + 
-                 `• **Ops**: robust logging, retries, duplicate-date suppression, UNC path checks & write-tests.` ,
-        image: '/images/rpa/medocc-arch.png',
-        caption: 'Task Scheduler → Outlook COM → Workbook normaliser → SQL Agent (optional).'
-      },
-      {
-        heading: 'Outlook Ingestion & Dedup',
-        content: `The robot narrows the search window to “today” with Items.Restrict, iterates target senders only, and saves attachments that match the expected name pattern. Dates parsed from filenames (ddmmyyyy → yyyymmdd) drive idempotency: the same date won’t be processed twice in one run.`
-      },
-      {
-        heading: 'Workbook Hardening',
-        content: `To make the file ETL-safe, formulas are replaced with values (data_only technique), top rows are tidied/removed, filters & widths applied, numeric formats set (e.g., 0.00 vs integer columns), and tails beyond the last populated row are deleted.`
-      },
-      {
-        heading: 'SQL Agent Handoff (Optional)',
-        content: `When enabled, the script executes **sp_start_job** for the MedOCC import job via pyodbc. This decouples the mailbox latency from the warehouse pipeline while keeping a single control plane.`
-      },
-      {
-        heading: 'Scheduling & Reliability',
-        content: `A simple .bat launched by Task Scheduler avoids profile/drive-mapping surprises. The bot validates UNC write-access before saving, uses bounded retries on file saves, and emits structured logs for quick diagnosis.`
-      },
-      {
-        heading: 'What I Shipped',
-        content: `• Outlook→UNC attachment harvest with sender allowlist & date filter\n• Workbook normaliser (formulas→values, formats, filters, freeze panes)\n• Optional SQL Agent trigger\n• Comprehensive logging + duplicate-date guard\n• Safe defaults for shared environments`
-      },
-      {
-        heading: 'What I’d Ship Next',
-        content: `1) Minimal UI for replays & manual backfills; 2) Service account hardening + run-as profile; 3) Email-back success/failure summaries; 4) Move the Restrict window to a rolling N-days to catch late deliveries.`
-      },
-      {
-        heading: 'Reference List (selected)',
-        content: `• Outlook Attachment.SaveAsFile; Outlook Items.Restrict filter formatting\n• Excel Workbook.RefreshAll (context for refresh-based flows)\n• SQL Server Agent: sp_start_job\n• Windows Task Scheduler developer docs\n• openpyxl “data_only” behaviour`
-      }
-    ]
-  },
-  {
-    slug: 'cancer-ptl-rpa',
-    title: 'Cancer 62-Day PTL Weekly RPA: Folder Roll-Forward, Excel Refresh, Outlook Mail-Merge',
-    shortDesc:
-      'Python + xlwings automation that clones last week’s PTL folder, renames artifacts with the new week ending, refreshes the master workbook, injects a KPI table into an Outlook template, attaches deliverables, and sends.',
-    mediaType: 'image',
-    mediaUrl: '/media/cancer_ptl_rpa.svg',
-    repoUrl: 'https://github.com/your-username/cancer-ptl-rpa',
-    siteUrl: 'https://your-site/cancer-ptl-rpa',
-    sections: [
-      {
-        heading: 'Introduction',
-        content: `This weekly robot packages the Cancer 62-Day PTL snapshot with near-zero clicks. It creates the new week’s folder (YYYY.MM.DD), rolls forward last week’s files, refreshes the main workbook twice to stabilise connections, renders a clean HTML table from the Summary sheet, merges it into an Outlook template, and sends to the distribution list.`
-      },
-      {
-        heading: 'The Technical Challenge',
-        content: `Stakeholders want the numbers in the email body, not only as attachments. Outlook is picky, so the RPA renders an email-safe HTML table and avoids shipping the raw PTL workbook unless required.`
-      },
-      {
-        heading: 'Architecture Overview',
-        content: `• Folder roll-forward: compute previous Sunday → create the week folder → copy the main workbook; first CANPTL V3 workbook is renamed to “CANPTL V3 – {YYYY.MM.DD}.xlsx”.
-  • Excel refresh: xlwings launches Excel, performs RefreshAll twice with short waits, then saves and closes (visible mode allows SSO prompts).
-  • Email assembly: Open .MSG or .OFT, replace the [INSERT TABLE] placeholder with generated HTML, attach deliverables (excluding raw CANPTL V3), then send.`,
-        image: '/images/rpa/cancer-ptl-arch.png',
-        caption: 'Weekly cadence: roll-forward → refresh → render → mail-merge → send.'
-      },
-      {
-        heading: 'HTML Table Rendering',
-        content: `The bot lifts A1:G6 from the Summary sheet into a DataFrame, emits a compact table with inline CSS (Calibri, borders, header banding). Integers are formatted cleanly and section headers span columns for a readable, Outlook-safe grid.`
-      },
-      {
-        heading: 'COM Robustness & UNC Paths',
-        content: `Mapped drives can fail under COM. A small helper converts S: paths to full UNC before opening templates, reducing file-not-found errors when Outlook automates outside an interactive logon.`
-      },
-      {
-        heading: 'Operations & Safety',
-        content: `Excel is always closed in finally blocks; temp files are skipped; attachments are whitelisted. The flow prints concise telemetry for visibility: folder created, copied and renamed, refresh started and completed, attachments added, email sent.`
-      },
-      {
-        heading: 'What I Shipped',
-        content: `• One-click weekly roll-forward with canonical naming
-  • Resilient Excel refresh via xlwings (double RefreshAll)
-  • HTML KPI grid injected into an Outlook template
-  • Attachment policy to avoid shipping raw PTL unless needed`
-      },
-      {
-        heading: 'What I’d Ship Next',
-        content: `1) Dry-run flag and preview mode; 2) Distribution via SES or Exchange transport with analytics; 3) Optional Power BI share-link in the email body; 4) Automated SDCS hand-off once sign-off is recorded.`
-      },
-      {
-        heading: 'Reference List (selected)',
-        content: `• Excel RefreshAll semantics (Interop)
-  • xlwings pattern for calling RefreshAll
-  • Outlook CreateItemFromTemplate and OpenSharedItem, Restrict filters
-  • Outlook Attachment.SaveAsFile for attachment hygiene
-  • Windows Task Scheduler concepts`
-      }
-    ]
-  },
-  {
-    slug: 'sdec-waiting-screen',
-    title: 'SDEC-EC Assessment Unit — Waiting Screen',
-    shortDesc:
-      'A real-time SDEC flow board built in Power BI with NHS-styled UI, translating EC attendance feeds into clean KPIs, thresholds, and a wallboard-ready experience.',
-    mediaType: 'image',
-    mediaUrl: '/images/sdec-waiting/sdec-waiting-cover.png',
-    repoUrl: 'https://github.com/your-username/sdec-waiting-screen', // optional
-    siteUrl: 'https://your-site/sdec-waiting-screen', // optional
-    hero: {                            // ⬅️ add this
-      type: 'slider',
-      beforeSrc: sdecBefore,
-      afterSrc:  sdecAfter,
-      beforeAlt: 'SSRS Report (excerpt)',
-      afterAlt:  'Power BI dashboard (Overview)',
-      beforeLabel: 'SSRS',
-      afterLabel:  'Dashboard',
-      initial: 52
-    },
-     // ↓↓↓ NEW: this makes ProjectPage render the slider instead of the static image
-     slider: {
-      before: sdecBefore,
-      after:  sdecAfter,
-      beforeAlt: 'SSRS Report (excerpt)',
-      afterAlt:  'Power BI dashboard (Overview)',
-      beforeLabel: 'SSRS',
-      afterLabel:  'Dashboard',
-      initial: 55,             // starting split %
-      aspect: 'aspect-[21/9]', // or 'aspect-video'
-    },
-    sections: [
-      {
-        heading: 'Introduction',
-        content:
-          'This project reimagines the SDEC-EC Assessment Unit waiting screen as a modern, branded Power BI report. It replaces a legacy SSRS board with a clean UI that surfaces live operational signals: patients awaiting treatment, current occupancy, assessment waits, and clinician waits — all styled to match NHS Medway’s visual language and optimised for continuous display on clinical corridor screens.'
-      },
-      {
-        heading: 'The Technical Challenge',
-        content:
-          'Four constraints defined the design. First, deriving snapshot-safe, real-time metrics using the latest Extract_Date_Time without double-counting attendances. Second, keeping the content clinically relevant and concise for a wallboard context, excluding secondary assessment clutter. Third, aligning definitions across EC_Attendance and M0001_EC_Attendance so measures like “currently in department” and time-to-events match trust-wide reporting. Fourth, delivering a production-feel UI that faithfully mirrors the HTML prototype inside native Power BI.'
-      },
-      {
-        heading: 'Architecture Overview',
-        content:
-          'Data sources: DB_Medway..EC_Attendance (detailed timestamps per attendance) and DB_Medway_Metrics..M0001_EC_Attendance (derived operational flags and time-to metrics), filtered to Department_Name = "SDEC-EC ASSESSMENT UNIT". The model links these via Attendance_ID with a supporting date dimension for future extensibility. All wallboard values are implemented as measures to stay filter-aware. The flow: source views → Power BI model (relationships, filters) → DAX measures for live KPIs → layout with status bar and KPI cards → scheduled auto-refresh aligned with ETL cadence.'
-      },
-      {
-        heading: 'SQL → BI Mapping & Key Measures',
-        content:
-          'A dedicated measure [SDEC Last Extract] captures the latest Extract_Date_Time. [SDEC Current Patients] counts rows in M0001_EC_Attendance where M0001av_Currently_In_Department = 1 at that snapshot. Patients awaiting treatment are identified as current attendances without a recorded treatment start using the EC_Attendance relationship. Average time to initial assessment and average wait to be seen by clinician use AVERAGEX over the relevant M0001 time-to fields, excluding blanks, negatives, and implausible extremes. A composite status measure evaluates time-to-clinician and occupancy against agreed thresholds to output both a label (“Flow stable / constrained / high pressure”) and corresponding colours for the status pill.'
-      },
-      {
-        heading: 'Interactive UX',
-        content:
-          'The primary use case is an unattended wallboard, so the experience is intentionally minimal. A single canvas presents the NHS Medway header, descriptive subtitle, and a clear “Last updated” timestamp. Below sits a flow status bar with a pill showing the current state and a text legend explaining the thresholds. A row of four KPI cards displays patients awaiting treatment, total patients in SDEC, mean time to initial assessment, and mean wait to be seen by a clinician. Measures are fully filter-aware, enabling the same layout to be reused on analytic pages with slicers or drill-through without redesign.'
-      },
-      {
-        heading: 'Design System',
-        content:
-          'The visuals adopt the NHS palette: Medway blue, dark blue, aqua, green, and red, with subtle greys for typography. The canvas uses a radial gradient inspired by the HTML PoC (circle at top-left, #e8f2fb to #f7f9fa) to create a soft blue glow behind the header and status bar. KPI cards are white with 18–24px corner radius, a 1px #dde5ec border, and a light shadow (rgba(0,0,0,0.06)). Titles are set in muted mid-grey, while KPI values use NHS dark blue with tabular numerals. The status pill uses pastel backgrounds (#e6f4ea / #fff4e5 / #fde8e8) and darker text colours for accessible contrast. Simple icons in the card corners echo the prototype’s watermark style.'
-      },
-      {
-        heading: 'Data Governance',
-        content:
-          'The waiting screen is built on controlled EC attendance views and derived metrics, avoiding direct exposure of names or free-text identifiers. Logic for "currently in department" and time-based KPIs is centralised in DAX, reducing the risk of conflicting local calculations. In a production rollout, the underlying views would be access-controlled, RLS or workspace segregation would restrict detailed data, and threshold logic for status would be clinically agreed and documented for auditability.'
-      },
-      {
-        heading: 'What I Shipped',
-        content:
-          'A Power BI SDEC Waiting Screen that mirrors the HTML proof-of-concept: NHS-branded header, radial gradient background, pill-based flow status bar, and four consistent KPI cards for queue, occupancy, and waits. Robust DAX measures map EC_Attendance and M0001_EC_Attendance into snapshot-safe counts and averages. The report is tuned for 1080p+ corridor displays, uses auto-refresh aligned with ETL, and is structured so the same measures can power analytic pages without UI duplication.'
-      },
-      {
-        heading: 'What I’d Ship Next',
-        content:
-          'Extend the pattern into a multi-unit Flow Board Template parameterised by Department_Name, enabling reuse for ED majors, minors, and UTC. Introduce a configuration table for capacities and time thresholds so clinical teams can adjust status logic without redeploying. Add an “Analysis” mode with slicers and detail tables driven by the same semantic model. Expose key pressure measures to monitoring or alerting systems. Complete an accessibility review for large-screen and desktop use, validating contrast, type scale, and keyboard navigation.'
-      },
-      {
-        heading: 'Reference List (selected)',
-        content:
-          'Internal views: DB_Medway..EC_Attendance; DB_Medway_Metrics..M0001_EC_Attendance. NHS Brand and design guidance for colour and logo usage. Power BI patterns for snapshot calculations with MAX(Extract_Date_Time), measure-driven conditional formatting, and card design. HTML/CSS prototype using radial gradients and NHS-styled components, which served as the visual blueprint for the Power BI implementation.'
-      }
-    ]
-  },
+    mediaCaption:
+      'Evidence-led case pack: cost-of-living parity + London-edge corridor dynamics + workforce risk + policy route.',
+    repoUrl: 'https://github.com/adamross94/mft-hcas-report',
+    siteUrl: 'https://main.d1rj09o2hxnq73.amplifyapp.com/',
   
-  {
-    slug: 'ae-monthly-sitrep-powerbi',
-    title: 'A&E Monthly SitRep - Provider vs Peer Performance (Power BI)',
-    shortDesc: 'Clean, NHS-styled Power BI report for A&E Attendances & Emergency Admissions with benchmarking against England and a configurable peer group, month selector, and focused pages for Overview, Long Waits, Admissions, and Trends.',
-    mediaType: 'image',
-    mediaUrl: '/images/ae-sitrep/ae-sitrep-cover.png',
-    siteUrl: 'https://your-site/ae-monthly-sitrep',
-    repoUrl: 'https://github.com/your-username/ae-monthly-sitrep',
-    hero: {                            // ⬅️ add this
-      type: 'slider',
-      beforeSrc: aeBefore,
-      afterSrc:  aeAfter,
-      beforeAlt: 'A&E Monthly publication spreadsheet (excerpt)',
-      afterAlt:  'Power BI dashboard (Overview)',
-      beforeLabel: 'Spreadsheet',
-      afterLabel:  'Dashboard',
-      initial: 52
+    // Portfolio-friendly: primary = the built artefact, secondary = the code
+    primaryCta: {
+      href: 'https://main.d1rj09o2hxnq73.amplifyapp.com/',
+      label: 'View the Report',
+      icon: 'link',
     },
-    // ↓↓↓ NEW: this makes ProjectPage render the slider instead of the static image
-    slider: {
-      before: aeBefore,
-      after:  aeAfter,
-      beforeAlt: 'A&E Monthly publication spreadsheet (excerpt)',
-      afterAlt:  'Power BI dashboard (Overview)',
-      beforeLabel: 'Spreadsheet',
-      afterLabel:  'Dashboard',
-      initial: 55,             // starting split %
-      aspect: 'aspect-[21/9]', // or 'aspect-video'
+    secondaryCta: {
+      href: 'https://github.com/adamross94/mft-hcas-report',
+      label: 'View on GitHub',
+      icon: 'github', // use 'link' if you don’t have a github icon key
     },
+  
     sections: [
+      {
+        heading: 'The problem this solves',
+        content:
+          'Medway sits in a London-edge labour market with fringe-level living costs, but staff do not receive the 5% High Cost Area Supplement (HCAS). That creates a take-home pay gap versus nearby fringe and outer-London employers, increases churn risk, and can unwind hard-won vacancy improvements—especially where fast rail/road links widen staff options.',
+      },
+  
+      {
+        heading: 'The ask (clear and specific)',
+        content:
+          'Add Medway NHS Foundation Trust to the **5% HCAS “Fringe” zone** in line with neighbouring comparators, so pay reflects the real labour market Medway competes in and the cost pressures staff experience.',
+      },
+  
+      {
+        heading: 'What I built',
+        content: `An audit-friendly evidence pack and report that converts a complex policy question into a refreshable, comparable set of indicators:
+  
+  - Executive summary (Problem → Ask → Impact)
+  - Key indicators card set (cost + workforce)
+  - Cost-of-living comparisons (housing, rent, rail, council tax)
+  - London-edge corridor and service/catchment narrative
+  - Workforce impact narrative (turnover, vacancy, agency risk)
+  - Policy route map (who does what, when)
+  - Sources & methods + verification checklist (so figures can be re-run consistently)`,
+      },
+  
+      {
+        heading: 'Key indicators (at a glance)',
+        content: `A small set of “signal” metrics aligned to a standard comparator set (e.g., Dartford / Gravesham / Thurrock):
+  
+  - **Rent YoY:** +13.1% (Jan 2025 vs Jan 2024)
+  - **Rail season:** £6,784 (Gillingham → London Terminals, 2025 annual)
+  - **Turnover:** ~14% vs ~10–12% in nearby fringe trusts
+  - **Vacancy trend:** 34% → 9% (improved, but fragile without pay parity)
+  - **Value signal:** retention over agency ≈ £2m/year (illustrative scenario)`,
+      },
+  
+      {
+        heading: 'How it works (evidence → decision narrative)',
+        content: `The report keeps one core rule: **standardise periods and units, then state one clear insight per domain**.
+  
+  1) Align periods (e.g., HPI to Dec 2024; rents Jan 2024→Jan 2025; 2025 annual seasons; council tax 2023/24).
+  2) Compare Medway vs a fixed fringe comparator set.
+  3) Convert comparisons into decision-relevant statements (pay gap risk, churn sensitivity, operational fragility).
+  4) Map evidence to the real policy route (NHSPRB → Staff Council → DHSC implementation).`,
+      },
+  
+      {
+        heading: 'The hardest constraint (and how I handled it)',
+        content:
+          'This isn’t a single dataset problem—it blends policy text (AfC annexes), legacy geographies, heterogeneous cost indicators, and workforce context. I handled that by treating the output as a **refreshable evidence system**: fixed comparators, aligned periods, explicit assumptions, and a verification checklist that lets any stakeholder re-run or challenge a figure without breaking the narrative.',
+      },
+  
+      {
+        heading: 'Cost-of-living parity (Medway vs fringe)',
+        content:
+          'The cost section focuses on the pressures staff feel in take-home terms: housing inflation trends, private rent acceleration, commuting costs (including HS1 realities), and fixed local costs like council tax. The goal is not “more charts”, but a consistent claim: **Medway’s household pressures match or exceed fringe comparators while pay does not.**',
+        image: '/images/hcas/hcas-arch.png',
+        caption: 'High-level pipeline: ingest → validate → compare → narrate → policy mapping.',
+      },
+  
+      {
+        heading: 'London-edge corridor, catchment and system reality',
+        content:
+          'Medway operates in a London-influenced corridor where staff choice sets and service networks cross boundaries. The report captures how fast links (HS1, A2/M2) widen employment options, and how regional pathway reality strengthens the case that Medway competes in a fringe ecosystem rather than a closed local market.',
+        image: '/images/hcas/hcas-flows.png',
+        caption: 'Cross-boundary flows and corridor dynamics used to support “London-edge” positioning.',
+      },
+  
+      {
+        heading: 'Workforce impact (retention risk and rota stability)',
+        content:
+          'The workforce section connects the pay differential to practical operating risk: churn, rota fragility, and agency dependence. It frames vacancy improvements as an asset worth protecting—arguing the 5% HCAS helps lock in gains by reducing the pull of fringe/outer-London employers in the same accessible labour market.',
+        image: '/images/hcas/hcas-workforce.png',
+        caption: 'Workforce pressure signals: turnover/vacancy trends and the risk of reversal without pay parity.',
+      },
+  
+      {
+        heading: 'Policy route and implementation pathway',
+        content:
+          'HCAS sits within Agenda for Change. The report includes a simple route map from local evidence pack → ICS and staff-side backing → NHSPRB evidence window → Staff Council negotiation → DHSC sign-off and implementation. This turns “nice analysis” into a plan stakeholders can actually execute.',
+        image: '/images/hcas/hcas-policy.png',
+        caption: 'Route map: local case → system backing → national decision → implementation.',
+      },
+  
+      {
+        heading: 'Architecture and reproducibility',
+        content: `Designed as a repeatable pipeline rather than a one-off slide deck:
+  
+  - Python ETL (requests/pandas) for ingest + shaping
+  - Postgres warehouse (cost_of_living / fares / council_tax / flows / workforce)
+  - dbt transforms to standardise comparable tables
+  - Visual layer: Power BI *or* React/Chart.js microsite
+  - Versioned snapshots (CSV/Parquet) + metadata (source/date/method)
+  - “Sources & methods” + verification checklist to refresh safely`,
+        image: '/images/hcas/hcas-stack.png',
+        caption: 'Reproducible pipeline feeding an auditable narrative and evidence table.',
+      },
+  
+      {
+        heading: 'Outcomes and impact',
+        content: `If implemented, a 5% HCAS aims to:
+  - Reduce churn pressure by closing the most visible pay gap vs fringe comparators
+  - Stabilise rota fill and protect elective/UEC/theatres capacity
+  - Lower premium agency reliance (illustrative ≈ £2m/year signal when paired with tight controls)
+  - Improve perceived fairness and retention confidence in a shared London-edge labour market`,
+      },
+  
+      {
+        heading: 'What I’d ship next',
+        content: `1) Quantify corridor effects with a postcode-level inflow sample (where permitted) to strengthen the catchment story.
+  2) Expand fare comparisons (HS1 vs classic products) across a wider commuter matrix.
+  3) Produce a formal board-ready dossier: 1-page evidence table, 10-page case PDF, comparator appendix, and endorsement pack aligned to NHSPRB expectations.`,
+      },
+  
+      {
+        heading: 'References (selected)',
+        content: `- AfC Handbook — Annex 8 (zones) & Annex 9 (rates/caps)
+  - NHSPRB reports / evidence submission process references
+  - ONS / UKHPI house price series (to Dec 2024)
+  - ONS Private Rental Market statistics (Jan 2024 → Jan 2025 comparison)
+  - Local authority Band D council tax schedules (2023/24)
+  - Rail season ticket references (standard annual products; HS1 vs classic notes)
+  - Trust/ICS workforce indicators (turnover/vacancy context)`,
+      },
+    ],
+  }
+,  
+{
+  slug: 'dsit-aws-signoff',
+  title: 'Automated AWS-Based DSIT Email & Sign-Off',
+  shortDesc:
+    'Serverless pipeline that generates Outlook-safe DSIT emails from daily outputs and captures one-click sign-offs via secure, trackable links—logging approvals for real-time visibility and audit trails.',
+  mediaType: 'image',
+  mediaUrl: '/images/dsit/aws-dsit-cover.png',
+
+  // ✅ Keep slider for this project
+  hero: {
+    type: 'slider',
+    beforeSrc: dsitBefore,
+    afterSrc: dsitAfter,
+    beforeAlt: 'Legacy DSIT Outlook email (excerpt)',
+    afterAlt: 'Rebuilt DSIT email template (excerpt)',
+    beforeLabel: 'Legacy',
+    afterLabel: 'Rebuilt',
+    initial: 52,
+  },
+
+  slider: {
+    before: dsitBefore,
+    after: dsitAfter,
+    beforeAlt: 'Legacy DSIT Outlook email (excerpt)',
+    afterAlt: 'Rebuilt DSIT email template (excerpt)',
+    beforeLabel: 'Legacy',
+    afterLabel: 'Rebuilt',
+    initial: 55,
+    aspect: 'aspect-[21/9]',
+  },
+
+  sections: [
     {
-    heading: 'Introduction',
-    content: 'This project turns the NHS England A&E Monthly publication into an explorable benchmarking tool. It highlights the core urgent-care metrics—% within 4 hours, admissions conversion, 12-hour waits, and DTA > 4h—using readable KPI cards and tidy views (Overview, Long Waits, Admissions, Trends). The report answers “where are we vs peers and England?” at a glance while remaining audit-friendly.'
+      heading: 'The problem this solves',
+      content:
+        'DSIT reporting often relies on manual steps and static attachments, which creates avoidable friction: version drift, low engagement (because insights are buried), and a sign-off process that is easy to miss and difficult to audit. The goal was to make the email itself the product—clear, consistent, and reliably approved.',
     },
+
     {
-    heading: 'The Technical Challenge',
-    content: 'The release provides national, peer, and provider totals by attendance type (T1/T2/T3) and month. End users needed an apples-to-apples comparison with a Month slicer, the ability to switch Who (Provider/Peers/England), and consistent KPIs across pages. The challenge was to model clear “Who” logic, keep the experience calm, and support drill into the peer set without losing the national context.'
+      heading: 'What I built',
+      content: `A production-shaped “daily DSIT → email → approval” workflow:
+
+- Scheduled generation of a daily DSIT email (no manual sending)
+- Outlook-safe, table-based HTML with inline CSS (“bulletproof” layout + CTAs)
+- Per-recipient one-click Sign Off links
+- DynamoDB-backed approval logging for live status and audit trails
+- CloudWatch observability (errors, retries, deliverability signals)`,
     },
+
     {
-    heading: 'Architecture Overview',
-    content: 'Source data from NHS England (A&E Waiting Times & Activity) → semantic model in Power BI → report UX. The model includes ProviderLevelRaw (long format monthly rows) and a Dates table generated from min/max Period Date (Month Name and YearMonthSort for ordering). Measures implement “Who” (Provider, Peers, England) and “Type” (T1/T2/T3) so all visuals respect the same filters.'
+      heading: 'How it works (end-to-end)',
+      content: `The design fits the real operational flow, including validation gates:
+
+1) Morning ETL prepares Type 3 data and produces the consolidated DSIT dataset (often exported to CSV).
+2) A scheduled AWS Lambda retrieves the dataset (commonly from S3), merges metrics into the email template, and produces Outlook-safe HTML.
+3) Lambda sends the email via Amazon SES to the distribution list.
+4) Each recipient gets a unique Sign Off link containing a signed, time-limited token.
+5) Clicking Sign Off hits an API endpoint; a Lambda validates the token and writes the approval record to DynamoDB (deduped + auditable).`,
+      image: '/images/dsit/arch.jpg',
+      caption:
+        'High-level flow: ETL → HTML render → SES send → tokenised sign-off → DynamoDB log.',
     },
+
     {
-    heading: 'Spreadsheet → Report Mapping',
-    content: 'KPI ribbon: Total Attendances, % within 4 hours, % Admitted, 12h Waits (count), DTA > 4h (count). Overview: doughnut for Within vs Over 4 Hours plus an audit table with Provider/Peer/England and numerator/denominator. Long Waits: stacked bars and a grid for 4h breaches + 12h waits by group. Admissions: chart and table for Admissions % with attendances and admissions counts. Trends: combo chart—breaches (primary) and 4h % (secondary 0–100%)—with a month table, scaling as new months are added.'
+      heading: 'The hardest constraint (and how I solved it)',
+      content:
+        'The hardest constraint was balancing Outlook’s rendering constraints with secure, auditable sign-off. Outlook clients are sensitive to modern CSS, so the template uses conservative patterns (tables + inline CSS) and resilient CTAs. On the approval side, sign-off must be tamper-resistant and replay-safe, so tokens are signed, time-bound, and verified server-side before any write is accepted.',
     },
+
     {
-    heading: 'Metric Logic',
-    content: 'Over 4h = Attendances − Seen within 4h. 4h % = Seen within 4h ÷ Attendances. Admissions % = Admissions ÷ Attendances. “Peers” sums the selected trusts (Dartford & Gravesham, East Kent, Maidstone & Tunbridge Wells). “England” uses the national totals provided. All measures are month-aware via the Dates relationship and respect Attendance Type (T1/T2/T3).'
+      heading: 'Architecture overview',
+      content: `**Core services**
+- S3 (optional): stores daily CSV / artefacts and versioned templates
+- Lambda: (a) compose+send job, (b) sign-off validation endpoint
+- SES: outbound email delivery
+- API Gateway: front door for sign-off clicks
+- DynamoDB: approvals + token state
+- CloudWatch: logs, metrics, alarms
+
+**Key design choices**
+- Split “send” and “sign-off” into separate functions/roles (least privilege).
+- Use idempotent writes in DynamoDB so duplicate clicks do not create duplicate approvals.
+- Version templates so you can roll back instantly if an email change breaks rendering.`,
+      image: '/images/dsit/stack.png',
+      caption: 'Serverless stack: S3, Lambda, SES, API Gateway, DynamoDB, CloudWatch.',
     },
+
     {
-    heading: 'Interactive UX',
-    content: 'Global slicers: Month (FY25/26), Attendance Type (Type 1/2/3/All), Benchmark Scope (Provider/Peers/England) with peer drill to specific trusts. Each page includes a Help dialog (definitions: Type 1/3, 4-hour standard, 12h waits, DTA > 4h) and a page-scoped Reset button using bookmarks, so resetting does not navigate away.'
+      heading: 'Email template engineering (Outlook-first)',
+      content:
+        'The template uses table-based layout and inline CSS only; CTAs are “bulletproof buttons” so they stay clickable and styled across Outlook variants. Text styling is protected with a nested span so font weight and colour remain stable across Outlook desktop and OWA. Spacing and lists use email-safe patterns for consistent line-height and reliable hit-targets.',
+      image: '/images/dsit/email.png',
+      caption: 'Outlook-safe layout patterns to keep rendering consistent.',
     },
+
     {
-    heading: 'Design System',
-    content: 'NHS palette and typography, soft card borders, accessible contrast, and consistent legends. KPI micro-badges reinforce semantics (“in scope”, “long waits”, “flow pressure”). The Trends combo locks the secondary axis to 0–100% for 4h %, and distributions are stacked for long-wait visuals.'
+      heading: 'Secure one-click sign-off',
+      content:
+        'Each email includes a personalised sign-off URL (tokenised). The token encodes recipient + send ID and expiry; the endpoint verifies signature and freshness before writing an approval record. Duplicate clicks are deduped using a composite key, and tokens can be made single-use to prevent replay.',
     },
+
     {
-    heading: 'Data Governance',
-    content: 'Data lineage is explicit: NHS England monthly publication → curated ProviderLevelRaw. The Dates table is generated from the actual data window, preventing invalid months in the slicer. Numerator/denominator columns in tables support reconciliation. The model is ready for scheduled refresh and incremental month ingestion.'
+      heading: 'Data model & governance',
+      content: `DynamoDB table (example: \`dsit_signoffs\`)
+- PK: recipient_id
+- SK: send_id
+- attributes: signed_at, status, template_version, user_agent, ip_hash (optional)
+- TTL: optional expiry for stale token state
+- GSI: by send_id for “who has signed today” views
+
+Governance patterns:
+- least-privilege IAM by function (send vs sign-off)
+- versioned templates and deterministic “what was sent” artefacts
+- deliverability hygiene via SES events (bounces/complaints) if enabled`,
     },
+
     {
-    heading: 'What I Shipped',
-    content: 'A four-page Power BI report with shared slicers and page-local Help/Reset; semantic “Who” measures applied consistently; Overview doughnut (Within vs Over 4h) with an audit table; Long Waits stacked chart and table; Admissions conversion % chart and grid; Trends combo chart with a fixed 0–100% secondary axis and a month table; peer drill to individual trusts while retaining England and provider benchmarks.'
+      heading: 'Operations & reliability',
+      content: `- Health signals: CloudWatch alarms on Lambda failures and API 5xx.
+- Delivery posture: SES verified identities; domain auth (SPF/DKIM/DMARC) when using a custom domain.
+- Rollback: template version pinning + quick revert.
+- Auditability: sign-offs stored immutably per send_id, enabling daily reconciliation and historical reporting.`,
     },
+
     {
-    heading: 'What I’d Ship Next',
-    content: 'Automated monthly ingestion from NHS England CSVs (Power Query) with incremental refresh; page-level CSV exports honoring slicers; parameterised peer sets for reuse across ICSs; anomaly banners where Type-3 variation may skew waits; an Executive Summary bookmark with month-on-month deltas; full accessibility pass.'
+      heading: 'Costs',
+      content:
+        'The running shape is low-cost at DSIT scale: SES is priced per 1,000 emails, Lambda per request/duration, and DynamoDB per read/write/storage. Daily sends plus a single sign-off click per recipient typically stays in the low single-digit range monthly unless the list or payload size grows significantly.',
+      image: '/images/dsit/costs.png',
+      caption: 'Cost drivers are primarily email volume and payload size, not compute.',
     },
+
     {
-    heading: 'Reference List (selected)',
-    content: 'NHS England — A&E Waiting Times & Activity (FY25/26). NHS identity standards (palette/typography). DAX patterns for conditional “Who” measures and month dimensions.'
-    }
-    ]
-    }
+      heading: 'What I shipped',
+      content: `- Outlook-safe email template suitable for daily operational use
+- Scheduled send workflow via SES + Lambda
+- Tokenised sign-off endpoint + DynamoDB logging
+- Monitoring hooks for reliability and (optionally) deliverability feedback`,
+    },
+
+    {
+      heading: 'What I’d ship next',
+      content: `1) Step Functions orchestration for retries and optional human-in-the-loop holds.
+2) Admin UI for resend/override and a live sign-off board.
+3) Higher-assurance sign-off option (SSO-confirmed) for strict workflows.
+4) Embedded trends (sparklines / deltas) while remaining Outlook-safe.`,
+    },
+
+    {
+      heading: 'References (selected)',
+      content: `- Amazon SES: pricing, sandbox vs production, deliverability events
+- AWS Lambda: scheduling + execution + monitoring
+- Amazon DynamoDB: idempotency patterns, TTL, and table design
+- API Gateway: token validation patterns (authorizers / Lambda handlers)
+- Outlook-safe email techniques (tables, inline CSS, bulletproof CTAs)`,
+    },
+  ],
+}
+,
+{
+  slug: 'medocc-dsit-rpa',
+  title: 'MedOCC DSIT RPA: Email → Excel Normalisation → SQL Import',
+  shortDesc:
+    'Windows-scheduled Python robot that ingests MedOCC Excel attachments from Outlook, converts volatile workbooks into ETL-safe files, and optionally triggers a SQL Server Agent import—built with retries, logging, and date-based idempotency.',
+  mediaType: 'image',
+  mediaUrl: '/media/medocc_dsit_rpa.svg',
+  repoUrl: 'https://github.com/adamross94/Automated-Outlook-Email-Processing-and-SQL-Job-Execution-Script',
+
+  // Optional (if your ProjectPage supports it and you want a button):
+  // primaryCta: { href: 'https://github.com/adamross94/Automated-Outlook-Email-Processing-and-SQL-Job-Execution-Script', label: 'View repo', icon: 'link' },
+
+  sections: [
+    {
+      heading: 'The problem this solves',
+      content:
+        'DSIT’s MedOCC feed arrived as emailed spreadsheets that needed manual downloading, tidying, and “making safe” before import. That created predictable failure points: missed attachments, inconsistent workbook shapes, formulas breaking ETL, and fragile handoffs into SQL jobs—right when the morning timeline is tight.',
+    },
+
+    {
+      heading: 'What I built',
+      content: `A scheduled “email → hardened workbook → optional SQL import” automation:
+
+- Outlook mailbox ingestion via COM (filtered by ReceivedTime + sender allowlist)
+- Attachment saving to a controlled path with bounded retries
+- Excel hardening: formulas → values, consistent sheet shape, freeze panes, and formatting fixes
+- Optional SQL Server Agent trigger to kick off the downstream import
+- File + console logging for quick diagnosis and support`,
+    },
+
+    {
+      heading: 'How it works (end-to-end)',
+      content: `1) **Trigger**: Windows Task Scheduler runs a wrapper at a fixed time.
+2) **Ingestion**: Outlook COM filters a tight ReceivedTime window and scans only approved senders; matching attachments are saved.
+3) **Idempotency**: the date parsed from the filename becomes the run key—preventing duplicate processing for the same day.
+4) **Normalisation**: the workbook is rewritten into an ETL-safe shape (values-only + consistent layout).
+5) **Handoff (optional)**: a SQL Server Agent job can be started once the file is ready.`,
+      image: '/images/rpa/medocc-arch.png',
+      caption: 'Task Scheduler → Outlook COM → Workbook normaliser → SQL Agent (optional).',
+    },
+
+    {
+      heading: 'The hardest constraint (and how I handled it)',
+      content:
+        'The hardest constraint was reliability across three “quirky” surfaces: Outlook filtering, Excel volatility, and the operational handoff to SQL Agent. The design keeps each step small and testable (filter → save → harden → trigger) with explicit logging and bounded retries, so a failure is diagnosable and does not silently corrupt the pipeline.',
+    },
+
+    {
+      heading: 'Outlook ingestion design',
+      content: `Key ingestion decisions:
+
+- **Restrict window**: query only the messages received within a defined timeframe (avoids scanning a whole inbox) using Outlook’s Restrict filtering. :contentReference[oaicite:1]{index=1}
+- **Sender allowlist**: process only known senders to reduce false positives.
+- **Attachment rules**: match filenames to an expected pattern, then extract the date to drive naming and idempotency.
+- **SaveAsFile**: persist each attachment deterministically on disk. :contentReference[oaicite:2]{index=2}`,
+    },
+
+    {
+      heading: 'Workbook hardening (Excel → ETL-safe)',
+      content: `The incoming workbooks can contain formulas, inconsistent row structures, and formatting artifacts that break imports. The hardening step focuses on producing a predictable file:
+
+- Replace formulas with stored values (openpyxl’s data-only load pattern)
+- Remove/tidy header rows when needed
+- Freeze panes / apply consistent layout rules
+- Save back to the same path so the SQL import sees a stable schema
+
+Note: openpyxl reads cached formula results; it does not calculate formulas itself—so this pattern works best when the source file is already calculated at send-time. :contentReference[oaicite:3]{index=3}`,
+    },
+
+    {
+      heading: 'Optional SQL Agent handoff',
+      content: `When enabled, the script starts the downstream import using SQL Server Agent via \`msdb\` (so email latency and the warehouse pipeline stay decoupled). This keeps the operational control point in SQL Agent while still automating the “last mile” from mailbox to import-ready file. :contentReference[oaicite:4]{index=4}`,
+    },
+
+    {
+      heading: 'Reliability, retries, and observability',
+      content: `Reliability is “designed in” rather than bolted on:
+
+- **Bounded retries** for attachment saves (with delay) to handle transient Outlook/IO failures
+- **Path checks** (writability + length sanity) before writes
+- **Dual logging** (file + console) so you can troubleshoot both scheduled runs and interactive tests
+- **Idempotency key** derived from the attachment date so reruns don’t reprocess the same day`,
+    },
+
+    {
+      heading: 'Security & governance',
+      content: `Practical governance choices for a shared environment:
+
+- Keep a tight sender allowlist and filename rules to reduce accidental ingestion
+- Write to a controlled location (ideally a UNC path with least-privilege permissions)
+- Keep SQL triggering optional and run it under a dedicated credential with only the rights needed to start the job`,
+    },
+
+    {
+      heading: 'What I shipped',
+      content: `- Outlook → disk attachment harvesting with ReceivedTime filtering + sender allowlist
+- Date-based idempotency so “today” only runs once
+- Workbook normalisation that produces an import-safe Excel file
+- Optional SQL Agent trigger for downstream ETL
+- Structured logging + bounded retries for operational reliability`,
+    },
+
+    {
+      heading: 'What I’d ship next',
+      content: `1) **Config-driven rules** (YAML/JSON) for senders, filename patterns, save paths, and timing.
+2) **Replay/backfill mode** (rolling N-day window) for late deliveries and controlled reruns.
+3) **Better formula handling** (optional Excel COM open/recalc) when cached results can’t be trusted.
+4) **Run summary email** (success/failure + saved path + row counts) to reduce “did it run?” queries.
+5) **Health checks**: confirm saved file shape/columns before triggering SQL Agent.`,
+    },
+
+    {
+      heading: 'References (selected)',
+      content: `- Outlook Items.Restrict (filtering mail items). :contentReference[oaicite:5]{index=5}
+- Outlook Attachment.SaveAsFile (persisting attachments). :contentReference[oaicite:6]{index=6}
+- openpyxl load_workbook(..., data_only=...) behaviour. :contentReference[oaicite:7]{index=7}
+- SQL Server Agent job start procedure (msdb). :contentReference[oaicite:8]{index=8}`,
+    },
+  ],
+},
+
+{
+  slug: 'cancer-ptl-rpa',
+  title: 'Cancer 62-Day PTL Weekly RPA — Roll-forward, Refresh, Outlook Mail-Merge',
+  shortDesc:
+    'Windows-scheduled Python automation that rolls forward the weekly PTL folder, refreshes the master Excel workbook, renders an Outlook-safe KPI table for the email body, attaches approved outputs, and sends—reliably and repeatably.',
+  mediaType: 'image',
+  mediaUrl: '/media/cancer_ptl_rpa.svg',
+  repoUrl: 'https://github.com/your-username/cancer-ptl-rpa',
+
+  // Optional but useful if your ProjectPage supports it (like GIRFT/PTL)
+  primaryCta: {
+    href: 'https://github.com/your-username/cancer-ptl-rpa',
+    label: 'View on GitHub',
+    icon: 'github',
+  },
+
+  sections: [
+    {
+      heading: 'The problem this solves',
+      content:
+        'The weekly Cancer 62-Day PTL review needs a consistent “week ending” pack that people can trust at speed. Manually rolling folders forward, refreshing Excel connections, copying KPIs into an email, and attaching the right files is slow and error-prone—especially when deadlines are tight and outputs must be consistently named and easy to audit.',
+    },
+
+    {
+      heading: 'What I built',
+      content: `A weekly robot that turns a repeatable operational routine into a single scheduled run:
+
+- Creates the new **week folder** (YYYY.MM.DD, previous Sunday)
+- Copies forward the canonical artefacts from last week (with standard naming)
+- Refreshes the master workbook **twice** to stabilise connections
+- Renders a clean KPI grid from the **Summary** sheet into an **Outlook-safe HTML table**
+- Opens a .MSG/.OFT template, injects the KPI table into a placeholder, attaches deliverables, and sends
+- Avoids sending the raw CANPTL workbook unless explicitly required`,
+    },
+
+    {
+      heading: 'How it works (weekly flow)',
+      content: `The run is designed around the operational “week ending” cadence:
+
+1) **Date anchor**: compute previous Sunday → use YYYY.MM.DD as the folder key.
+2) **Roll-forward**: create the new folder → copy the master workbook unchanged.
+3) **Canonical naming**: rename the first “CANPTL V3…” file to **CANPTL V3 - {YYYY.MM.DD}.xlsx**.
+4) **Refresh**: open Excel via xlwings (visible mode allows authentication prompts), run RefreshAll twice, save, close.
+5) **Email merge**: read Summary A1:G6 → generate an inline-CSS HTML table → replace **[INSERT TABLE]** in the template.
+6) **Attachments**: attach outputs from the weekly folder (skip *.tmp and the CANPTL V3 raw workbook).
+7) **Send**: deliver to the distribution list through Outlook COM automation.`,
+      image: '/images/rpa/cancer-ptl-arch.png',
+      caption: 'Weekly cadence: date anchor → roll-forward → refresh → render KPI grid → template merge → attach → send.',
+    },
+
+    {
+      heading: 'The hardest constraint (and how I solved it)',
+      content:
+        'The hardest constraint is that stakeholders want the KPIs *in the email body* (fast scanning), but Outlook rendering is fragile and inconsistent across clients. The solution was to generate a compact, table-based HTML KPI grid with inline CSS only (Calibri, borders, banding), and inject it into a pre-approved Outlook template using a single placeholder replacement—so the email remains readable even when formatting support is limited.',
+    },
+
+    {
+      heading: 'Excel refresh strategy (stability over cleverness)',
+      content:
+        'Instead of trying to be “smart” about which connections to refresh, the script uses a simple, repeatable pattern: open the workbook, wait briefly for connections to initialise, run RefreshAll twice with short waits, then save and close. This reduces intermittent failures caused by timing, authentication, or background refresh behaviour.',
+    },
+
+    {
+      heading: 'HTML KPI table rendering',
+      content: `The bot reads a fixed Summary range (A1:G6) into a DataFrame and emits a small, high-contrast table:
+
+- Section headers span columns for readability
+- Header banding matches NHS-style scanning patterns
+- Integer formatting avoids “.0” noise
+- Inline CSS keeps the layout stable in Outlook/OWA`,
+    },
+
+    {
+      heading: 'COM robustness (UNC paths + template handling)',
+      content: `Two operational gotchas are handled explicitly:
+
+- **UNC conversion**: mapped drives can fail under COM contexts, so S:\\ paths are converted to a UNC root before Outlook opens templates/paths.
+- **Template safety**: when using a .msg, the script opens it and works on a **Copy()** so the source template is never modified or left locked.`,
+    },
+
+    {
+      heading: 'Operations & safety',
+      content: `This is built for predictable weekly execution:
+
+- Excel is closed via **finally** blocks to prevent orphaned processes.
+- Attachments are **whitelisted by rules** (skip temp files; skip CANPTL V3 by default).
+- Console telemetry makes it obvious what happened (folder created, files copied, refresh completed, attachments added, email sent).`,
+    },
+
+    {
+      heading: 'What I shipped',
+      content: `- One-run weekly roll-forward with canonical naming (week ending folders)
+- Resilient Excel refresh via xlwings (double RefreshAll)
+- Outlook-safe KPI HTML table injected into a controlled template
+- Attachment policy that avoids shipping raw CANPTL unless needed
+- UNC-path hardening to reduce COM “file not found” failures`,
+    },
+
+    {
+      heading: 'What I’d ship next',
+      content: `1) **Dry-run / preview mode** (generate draft email, don’t send).
+2) **Late delivery handling** (rolling N-day window or backfill switch).
+3) **Run summary email** to the owner (success/failure + what was attached).
+4) **Config file** for paths/ranges/placeholders so changes don’t require code edits.`,
+    },
+
+    {
+      heading: 'References (selected)',
+      content: `- Excel: Workbook.RefreshAll semantics
+- Outlook: CreateItemFromTemplate (.oft) and OpenSharedItem (.msg)
+- xlwings patterns for driving Excel via COM
+- Windows scheduling patterns (Task Scheduler / schtasks)`,
+    },
+  ],
+},
+{
+  slug: 'sdec-waiting-screen',
+  title: 'SDEC-EC Assessment Unit — Waiting Screen',
+  shortDesc:
+    'A wallboard-ready Power BI flow board that replaces a legacy SSRS screen with snapshot-safe KPIs (queue, occupancy, waits) and an NHS-styled UI designed for continuous display.',
+  mediaType: 'image',
+  mediaUrl: '/images/sdec-waiting/sdec-waiting-cover.png',
+  siteUrl: '/media/sdec-waiting-screen.pdf',
+
+  hero: {
+    type: 'slider',
+    beforeSrc: sdecBefore,
+    afterSrc: sdecAfter,
+    beforeAlt: 'SSRS Report (excerpt)',
+    afterAlt: 'Power BI dashboard (Overview)',
+    beforeLabel: 'SSRS',
+    afterLabel: 'Dashboard',
+    initial: 52,
+  },
+
+  slider: {
+    before: sdecBefore,
+    after: sdecAfter,
+    beforeAlt: 'SSRS Report (excerpt)',
+    afterAlt: 'Power BI dashboard (Overview)',
+    beforeLabel: 'SSRS',
+    afterLabel: 'Dashboard',
+    initial: 55,
+    aspect: 'aspect-[21/9]',
+  },
+
+  sections: [
+    {
+      heading: 'The problem this solves',
+      content:
+        'The existing SDEC waiting board worked, but it was hard to read at speed, visually dated, and fragile when definitions drifted between EC extracts and trust-wide reporting. For a corridor screen, the goal is simple: a small set of clinically meaningful “right now” signals that stay correct at every refresh and stay legible from a distance.',
+    },
+
+    {
+      heading: 'What I built',
+      content: `A Power BI rebuild of the SDEC-EC waiting screen designed for unattended wallboard use:
+
+- Snapshot-safe “current position” KPIs (queue, occupancy, assessment wait, clinician wait)
+- A clear “Last updated” timestamp derived from the latest extract
+- A flow-status bar (“stable / constrained / high pressure”) driven by agreed thresholds
+- NHS-styled cards, typography, and colour system for fast scanning`,
+    },
+
+    {
+      heading: 'The hardest technical constraint (and how I solved it)',
+      content:
+        'The hardest part is **being correct at a single point in time**. EC feeds update frequently, so you can’t mix rows from different extracts and call it “current”. The solution is a strict snapshot pattern: every “now” KPI is evaluated against the latest Extract_Date_Time, so counts and averages are computed from one consistent cut of the data (not a rolling blend).',
+    },
+
+    {
+      heading: 'Data sources and semantic model',
+      content: `**Sources**
+- DB_Medway..EC_Attendance (attendance timestamps and event fields)
+- DB_Medway_Metrics..M0001_EC_Attendance (derived operational flags and time-to metrics)
+
+**Scope**
+- Filtered to Department_Name = "SDEC-EC ASSESSMENT UNIT"
+
+**Model**
+- Attendance_ID as the join key (supporting a shared “attendance grain”)
+- Measures-only KPIs (keeps the wallboard logic centralised and reusable)
+- A date/time helper dimension if you later extend this into trend/analysis pages`,
+    },
+
+    {
+      heading: 'Key measures and KPI logic',
+      content: `The report is powered by a small, disciplined measure set:
+
+- **[Last Extract]** = MAX(Extract_Date_Time) to anchor the snapshot.
+- **[Current Patients]** = count of attendances flagged as currently in department at [Last Extract].
+- **[Awaiting Treatment]** = current attendances with no recorded treatment start (using the attendance relationship to check event presence).
+- **[Mean Time to Initial Assessment]** and **[Mean Wait to Clinician]** = AVERAGEX over the relevant time-to fields, excluding blanks and implausible values.
+- **[Flow Status]** = a rules-based measure that evaluates waits/occupancy vs thresholds and returns a label + formatting hooks for the status pill.
+
+This keeps definitions auditable and avoids “same number, different meaning” drift across pages.`,
+    },
+
+    {
+      heading: 'Wallboard UX (minimal but reusable)',
+      content: `The primary mode is unattended display, so the layout stays intentionally minimal:
+
+- Strong header + unit name for instant context
+- “Last updated” timestamp users can trust
+- One status bar that explains the operational state in plain language
+- Four KPI cards designed for distance readability
+
+Because everything is measure-driven, the same semantic layer can power a future “analysis” page with slicers and drill-through without rewriting KPI logic.`,
+    },
+
+    {
+      heading: 'Design system (NHS-style)',
+      content: `The UI follows NHS-style colour emphasis and legibility:
+
+- Dominant NHS Blue / white with restrained highlights (status colours used sparingly)
+- High-contrast numerals and muted label text for fast scanning
+- Rounded, lightly-bordered KPI cards that read cleanly on large displays
+- Status pill uses accessible background tints with darker text for contrast
+
+This is deliberately “quiet” UI: fewer distractions, clearer signal.`,
+    },
+
+    {
+      heading: 'Governance, safety, and validation',
+      content: `- Wallboard uses operational measures and avoids exposing names or free-text identifiers.
+- Snapshot anchoring makes results explainable (“this is the latest extract”) and avoids partial-refresh confusion.
+- Thresholds for status are designed to be clinically agreed and documented.
+- The same measures can be reused elsewhere, reducing the chance of competing local definitions.`,
+    },
+
+    {
+      heading: 'Outcomes and impact',
+      content: `- Faster situational awareness for the unit (queue + occupancy + waits in one glance)
+- More consistent operational definitions versus ad-hoc derived numbers
+- A template pattern that can be reused for other areas (ED Majors/Minors/UTC) with parameterised department scope`,
+    },
+
+    {
+      heading: 'What I’d ship next',
+      content: `1) A “Flow Board Template” model parameterised by Department_Name (reuse across units).
+2) A small configuration table for capacities + thresholds so changes don’t require a redeploy.
+3) An analysis page (trends, time bands, distributions) powered by the same measures.
+4) A lightweight validation page (sanity checks: snapshot completeness, null rates, outlier rates).`,
+    },
+
+    {
+      heading: 'References (selected)',
+      content: `- NHS Identity Guidelines — Colours (palette + colour emphasis): https://www.england.nhs.uk/nhsidentity/identity-guidelines/colours/
+- Microsoft Learn — MAX (DAX): https://learn.microsoft.com/en-us/dax/max-function-dax
+- Microsoft Learn — Automatic page refresh in Power BI Desktop (DirectQuery): https://learn.microsoft.com/en-us/power-bi/create-reports/desktop-automatic-page-refresh
+- Microsoft Learn — Visual calculations (examples returning colours for formatting patterns): https://learn.microsoft.com/en-us/power-bi/transform-model/desktop-visual-calculations-overview`,
+    },
+  ],
+}
+,
+{
+  slug: 'ae-monthly-sitrep-powerbi',
+  title: 'A&E Monthly SitRep — Provider vs Peer Performance (Power BI)',
+  shortDesc:
+    'Clean, NHS-styled Power BI report for A&E Attendances & Emergency Admissions with benchmarking against England and a configurable peer group, month selector, and focused pages for Overview, Long Waits, Admissions, and Trends.',
+  mediaType: 'image',
+  mediaUrl: '/images/ae-sitrep/ae-sitrep-cover.png',
+  siteUrl: '/media/ae-monthly-sitrep-powerbi.pdf',
+  hero: {
+    type: 'slider',
+    beforeSrc: aeBefore,
+    afterSrc: aeAfter,
+    beforeAlt: 'A&E Monthly publication spreadsheet (excerpt)',
+    afterAlt: 'Power BI dashboard (Overview)',
+    beforeLabel: 'Spreadsheet',
+    afterLabel: 'Dashboard',
+    initial: 52,
+  },
+
+  slider: {
+    before: aeBefore,
+    after: aeAfter,
+    beforeAlt: 'A&E Monthly publication spreadsheet (excerpt)',
+    afterAlt: 'Power BI dashboard (Overview)',
+    beforeLabel: 'Spreadsheet',
+    afterLabel: 'Dashboard',
+    initial: 55,
+    aspect: 'aspect-[21/9]',
+  },
+
+  sections: [
+    {
+      heading: 'The problem this solves',
+      content:
+        'The NHS England A&E Monthly SitRep is essential, but spreadsheet-based review makes it hard to answer the operational questions quickly: “Where are we vs England?”, “Are we drifting vs peers?”, and “Is pressure coming from breaches, admissions, or long waits?”. It also creates practical friction: month scanning is slow, definitions get lost, version-control can drift via emailed copies, and Type 3 quirks can confuse conversations if the context is not explicit.',
+    },
+
+    {
+      heading: 'What I built',
+      content: `A calm, audit-friendly Power BI report that turns the monthly publication into an interactive benchmarking tool:
+
+- **Shared controls**: Month selector, Attendance Type (T1/T2/T3/All), Benchmark scope (Provider / Peers / England)
+- **Focused pages**: Overview, Long Waits, Admissions, Trends
+- **Consistent KPI language** across pages (same definitions, same numerator/denominator semantics)
+- **Built-in “Help / definitions”** so Type 1/2/3, 4-hour standard, 12-hour waits, and DTA > 4h are never “tribal knowledge”
+- **Reset per page** using bookmarks so users can recover a default view instantly`,
+    },
+
+    {
+      heading: 'The hardest constraint (and how I solved it)',
+      content:
+        'The hardest constraint was balancing “fast scanning” with “no ambiguity.” Stakeholders needed a single-click answer for performance, but also a way to validate figures without reopening the spreadsheet. I solved this with a measures-first semantic layer: every headline KPI has a paired audit view (numerator, denominator, derived rate/count) so the report stays decision-grade while remaining reconcilable back to the publication.',
+    },
+
+    {
+      heading: 'Data model and architecture',
+      content: `**Source**
+- NHS England monthly A&E Attendances and Emergency Admissions publication (XLS/CSV)
+
+**Model**
+- Fact table in long format (Provider-month rows with the published totals)
+- Dates dimension generated from min/max period dates (Month label + sortable YearMonth key)
+
+**Measure design**
+- “Who” selector drives Provider vs Peers vs England totals without duplicating visuals
+- Attendance Type drives T1/T2/T3/All consistently across every page
+- Rates are always derived from explicit numerators/denominators (audit-ready)
+
+This structure keeps the UX simple while ensuring new months append cleanly as fresh publications are released.`,
+    },
+
+    {
+      heading: 'How the pages map to real review behaviour',
+      content: `**Overview**
+- KPI ribbon: Attendances, 4-hour %, Admissions %, 12-hour waits, DTA > 4h
+- Visual summary for “Within vs Over 4 Hours”
+- Audit table that shows Provider/Peers/England side-by-side
+
+**Long waits**
+- A dedicated view for breach volume and >12h waits so “pressure” is visible even when rates are stable
+
+**Admissions**
+- Conversion (Admissions ÷ Attendances) plus supporting counts to show whether flow pressure is driven by admissions volume vs attendances
+
+**Trends**
+- Month-by-month view with stable axes so changes are visually trustworthy, not chart-scale artefacts`,
+    },
+
+    {
+      heading: 'Benchmarking and peer groups',
+      content:
+        'Peers are treated as a first-class benchmark, not an afterthought: the report can show Provider vs England vs a defined peer set on the same semantic basis. The peer view uses the publication’s compatible totals, so comparisons remain apples-to-apples rather than mixing local definitions with national ones. Where Type 3 variation risks misinterpretation, the report is designed to surface that context via definitions/help and page-level cues.',
+    },
+
+    {
+      heading: 'Design system and accessibility',
+      content:
+        'The UI follows NHS-style visual discipline: restrained palette, readable typography, clear hierarchy, soft card borders, and consistent legends. KPI emphasis is used sparingly so the page remains calm on repeat viewing (monthly rhythm), and the layout is designed to work well in screenshots for papers and updates. Colour usage aligns with NHS brand conventions (e.g., NHS Blue #005EB8 and Dark Blue #003087).',
+    },
+
+    {
+      heading: 'Data governance and auditability',
+      content: `Governance is built into the interaction model:
+
+- The Dates table is derived from actual available months (no “empty months” in slicers).
+- Every rate has an audit path (numerator/denominator visible).
+- Page-level Reset prevents “filter debt” when screenshots are needed quickly.
+- The structure supports scheduled refresh as new NHS England months drop, without redesign.`,
+    },
+
+    {
+      heading: 'Improvements delivered',
+      content: `- Faster monthly review: “where are we vs peers/England?” in seconds.
+- Reduced confusion: consistent KPI language + in-report definitions.
+- Less version drift: one governed dashboard replaces many emailed spreadsheets.
+- Better trend visibility: month-on-month patterns become obvious without manual scanning.`,
+    },
+
+    {
+      heading: 'What I’d ship next',
+      content: `1) Automated ingestion from NHS England CSVs with validation checks (missing months, revised files, variance flags).
+2) Parameterised peer groups (config table) so the same template can be reused across teams/ICSs.
+3) A “Data Quality / Notes” banner that can highlight Type 3 attribution caveats when relevant.
+4) Exec Summary bookmark: current month deltas vs last month + vs peer median.
+5) Accessibility pass: contrast validation, keyboard navigation checks, and screen-reader-friendly ordering.`,
+    },
+
+    {
+      heading: 'References (selected)',
+      content: `- NHS England Statistics: A&E Attendances and Emergency Admissions (monthly publication hub, XLS/CSV downloads, guidance and context).
+- NHS brand / style guidance (colour palette and usage conventions).`,
+    },
+  ],
+}
+
        
   // …other projects…
 ]

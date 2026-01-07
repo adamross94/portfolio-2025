@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { projects } from "../data/projects";
-import { FaGithub, FaGlobe } from "react-icons/fa";
+import { FaFilePdf, FaGithub, FaGlobe } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import {
   LuSparkles,
@@ -18,6 +18,8 @@ import { useTheme } from "../context/ThemeContext";
 const slugify = (s = "") =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
+const isPdfLink = (url = "") => /\.pdf($|[?#])/i.test(url);
+
 const sectionIcon = (heading = "") => {
   const key = heading.toLowerCase();
   if (key.includes("introdu")) return LuSparkles;
@@ -28,15 +30,124 @@ const sectionIcon = (heading = "") => {
   return LuImages;
 };
 
-const splitParagraphs = (content) => {
+const NhsLogo = ({ className }) => (
+  <svg
+    viewBox="0 0 72 32"
+    className={className}
+    aria-hidden="true"
+    focusable="false"
+  >
+    <rect width="72" height="32" rx="4" fill="#005EB8" />
+    <text
+      x="36"
+      y="20"
+      textAnchor="middle"
+      fontFamily="Arial, sans-serif"
+      fontWeight="700"
+      fontSize="18"
+      fill="#fff"
+      letterSpacing="1"
+    >
+      NHS
+    </text>
+  </svg>
+);
+
+const normalizeContent = (content) => {
   if (Array.isArray(content)) {
-    return content.map((c) => `${c}`.trim()).filter(Boolean);
+    return content.map((c) => `${c}`.trim()).filter(Boolean).join("\n\n");
   }
-  if (!content) return [];
-  return `${content}`
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+  return `${content ?? ""}`.trim();
+};
+
+const parseContentBlocks = (content) => {
+  const text = normalizeContent(content);
+  if (!text) return [];
+
+  const blocks = [];
+  let paragraph = [];
+  let list = null;
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    blocks.push({ type: "p", text: paragraph.join(" ") });
+    paragraph = [];
+  };
+
+  const flushList = () => {
+    if (!list) return;
+    blocks.push(list);
+    list = null;
+  };
+
+  for (const rawLine of text.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    const orderedMatch = line.match(/^(\d+)[.)]\s+(.*)$/);
+    if (orderedMatch) {
+      flushParagraph();
+      if (!list || list.type !== "ol") {
+        flushList();
+        list = { type: "ol", items: [] };
+      }
+      list.items.push(orderedMatch[2]);
+      continue;
+    }
+
+    const unorderedMatch = line.match(/^(?:[-*]|\u2022)\s+(.*)$/);
+    if (unorderedMatch) {
+      flushParagraph();
+      if (!list || list.type !== "ul") {
+        flushList();
+        list = { type: "ul", items: [] };
+      }
+      list.items.push(unorderedMatch[1]);
+      continue;
+    }
+
+    flushList();
+    paragraph.push(line);
+  }
+
+  flushParagraph();
+  flushList();
+  return blocks;
+};
+
+const renderInline = (text) => {
+  if (!text) return null;
+  const nodes = [];
+  const regex = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+    nodes.push(<strong key={`bold-${key++}`}>{match[1]}</strong>);
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+};
+
+const renderCtaIcon = (icon) => {
+  if (icon === "nhs") return <NhsLogo className="h-4 w-8" />;
+  if (icon === "github") return <FaGithub />;
+  if (icon === "pdf") return <FaFilePdf />;
+  if (icon === "link") return <FaGlobe />;
+  return null;
 };
 
 export default function ProjectPage() {
@@ -66,6 +177,13 @@ export default function ProjectPage() {
 
   const prev = idx > 0 ? projects[idx - 1] : null;
   const next = idx < projects.length - 1 ? projects[idx + 1] : null;
+  const primaryCta = project.primaryCta?.href ? project.primaryCta : null;
+  const secondaryCta = project.secondaryCta?.href ? project.secondaryCta : null;
+  const showSiteUrl =
+    project.siteUrl &&
+    project.siteUrl !== primaryCta?.href &&
+    project.siteUrl !== secondaryCta?.href;
+  const siteIsPdf = isPdfLink(project.siteUrl);
 
   const sections = useMemo(
     () =>
@@ -161,6 +279,17 @@ export default function ProjectPage() {
                   <span>{project.hero.afterAlt}</span>
                 </div>
               )}
+              {project.mediaCaption && (
+                <div
+                  className={`border-t px-4 py-3 text-sm leading-relaxed ${
+                    isDark
+                      ? "border-white/10 text-emerald-200/80"
+                      : "border-emerald-900/10 text-emerald-900/70"
+                  }`}
+                >
+                  {project.mediaCaption}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col justify-center space-y-6">
@@ -220,9 +349,9 @@ export default function ProjectPage() {
               )}
 
               <div className="flex flex-wrap gap-4">
-                {project.repoUrl && (
+                {primaryCta ? (
                   <a
-                    href={project.repoUrl}
+                    href={primaryCta.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`inline-flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold shadow transition ${
@@ -231,10 +360,41 @@ export default function ProjectPage() {
                         : "bg-emerald-600 text-white hover:bg-emerald-500"
                     }`}
                   >
-                    <FaGithub /> View on GitHub
+                    {renderCtaIcon(primaryCta.icon)}
+                    {primaryCta.label}
+                  </a>
+                ) : (
+                  project.repoUrl && (
+                    <a
+                      href={project.repoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold shadow transition ${
+                        isDark
+                          ? "bg-emerald-500 text-black hover:bg-emerald-400"
+                          : "bg-emerald-600 text-white hover:bg-emerald-500"
+                      }`}
+                    >
+                      <FaGithub /> View on GitHub
+                    </a>
+                  )
+                )}
+                {secondaryCta && (
+                  <a
+                    href={secondaryCta.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-2 px-5 py-3 rounded-full border text-sm font-semibold transition ${
+                      isDark
+                        ? "border-white/20 hover:bg-white/10"
+                        : "border-emerald-900/10 hover:bg-emerald-100/50"
+                    }`}
+                  >
+                    {renderCtaIcon(secondaryCta.icon)}
+                    {secondaryCta.label}
                   </a>
                 )}
-                {project.siteUrl && (
+                {showSiteUrl && (
                   <a
                     href={project.siteUrl}
                     target="_blank"
@@ -245,7 +405,8 @@ export default function ProjectPage() {
                         : "border-emerald-900/10 hover:bg-emerald-100/50"
                     }`}
                   >
-                    <FaGlobe /> Visit Site
+                    {siteIsPdf ? <FaFilePdf /> : <FaGlobe />}
+                    {siteIsPdf ? "View PDF" : "Visit Site"}
                   </a>
                 )}
               </div>
@@ -303,7 +464,7 @@ export default function ProjectPage() {
 
             {sections.map((sec) => {
               const Icon = sectionIcon(sec.heading);
-              const paragraphs = splitParagraphs(sec.content);
+              const blocks = parseContentBlocks(sec.content);
               const hasMedia = Boolean(sec.image || sec.gallery?.length);
               const align = sec.imageAlign === "left" ? "lg:flex-row-reverse" : "";
 
@@ -331,10 +492,46 @@ export default function ProjectPage() {
                           {sec.heading}
                         </h2>
                       </div>
-                      <div className={`space-y-4 text-lg leading-relaxed ${isDark ? "text-gray-200" : "text-gray-700"}`}>
-                        {paragraphs.map((para, idx) => (
-                          <p key={idx}>{para}</p>
-                        ))}
+                      <div
+                        className={`space-y-5 text-lg leading-relaxed ${
+                          isDark ? "text-gray-200" : "text-gray-700"
+                        }`}
+                      >
+                        {blocks.map((block, idx) => {
+                          if (block.type === "ul") {
+                            return (
+                              <ul
+                                key={`${sec.id}-ul-${idx}`}
+                                className="space-y-2 list-disc pl-5 marker:text-emerald-500/70"
+                              >
+                                {block.items.map((item, itemIdx) => (
+                                  <li key={`${sec.id}-ul-${idx}-${itemIdx}`}>
+                                    {renderInline(item)}
+                                  </li>
+                                ))}
+                              </ul>
+                            );
+                          }
+                          if (block.type === "ol") {
+                            return (
+                              <ol
+                                key={`${sec.id}-ol-${idx}`}
+                                className="space-y-2 list-decimal pl-5 marker:text-emerald-500/70"
+                              >
+                                {block.items.map((item, itemIdx) => (
+                                  <li key={`${sec.id}-ol-${idx}-${itemIdx}`}>
+                                    {renderInline(item)}
+                                  </li>
+                                ))}
+                              </ol>
+                            );
+                          }
+                          return (
+                            <p key={`${sec.id}-p-${idx}`}>
+                              {renderInline(block.text)}
+                            </p>
+                          );
+                        })}
                       </div>
                     </div>
 
